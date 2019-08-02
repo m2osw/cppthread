@@ -1,6 +1,6 @@
 
 <p align="center">
-<img alt="advgetopt" title="Advance getopt, a C++ library to handle your command line options and configuration files seamlessly."
+<img alt="cppthread" title="C++ library to easily manage thread and thread pools including communication and mutexes."
 src="https://raw.githubusercontent.com/m2osw/cppthread/master/doc/cppthread.png" width="191" height="248"/>
 </p>
 
