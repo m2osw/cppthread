@@ -1,7 +1,7 @@
 
 <p align="center">
 <img alt="advgetopt" title="Advance getopt, a C++ library to handle your command line options and configuration files seamlessly."
-src="https://raw.githubusercontent.com/m2osw/cppthread/master/doc/cppthread.png" width="70" height="70"/>
+src="https://raw.githubusercontent.com/m2osw/cppthread/master/doc/cppthread.png" width="191" height="248"/>
 </p>
 
 # Introduction
