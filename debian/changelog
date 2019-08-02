@@ -1,0 +1,5 @@
+cppthread (1.0.0.0~xenial) xenial; urgency=high
+
+  * Moving the snap_thread.cpp/.h to its own project to use it everywhere.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri,  2 Aug 2019 03:54:15 -0800

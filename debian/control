@@ -1,0 +1,42 @@
+Source: cppthread
+Priority: extra
+Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Build-Depends: cmake,
+    debhelper,
+    doxygen,
+    graphviz,
+    libadvgetopt-dev (>= 2.0.1.0~xenial),
+    libboost-dev,
+    libexcept-dev (>= 1.1.4.0~xenial),
+    libutf8-dev (>= 1.0.6.0~xenial),
+    snapcatch2 (>= 2.9.1.0~xenial),
+    snapcmakemodules (>= 1.0.49.0~xenial),
+    snapdev (>= 1.1.3.0~xenial)
+Standards-Version: 3.9.4
+Section: libs
+Homepage: https://snapwebsites.org/
+Vcs-Git: https://github.com/m2osw/snapcpp.git
+Vcs-Browser: https://github.com/m2osw/cppthread
+
+Package: cppthread-dev
+Section: libdevel
+Architecture: any
+Depends: cppthread (= ${binary:Version}), ${misc:Depends}
+Description: Development package for the cppthread library.
+ This library provides safe thread capabilities for C++.
+
+Package: cppthread-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: Documentation for the cppthread library.
+ This library provides safe thread capabilities for C++.
+
+Package: cppthread
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: C++ library for easy multi-thread implementations.
+ This library provides safe thread capabilities for C++.
+
+# vim: ts=4 sw=4 et
