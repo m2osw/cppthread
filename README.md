@@ -15,7 +15,7 @@ mutexes, etc.
 
 # License
 
-The project is covered by the GPL license.
+The project is covered by the GPL 2.0 license.
 
 
 # Bugs
