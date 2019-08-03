@@ -1,5 +1,6 @@
 // Snap Websites Server -- advanced handling of Unix thread
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// https://snapwebsites.org/project/cppthread
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,19 +28,22 @@
  * finishing up its and its runner clean up.
  */
 
-// our lib
+// libexcept lib
 //
-#include "snapwebsites/snap_exception.h"
+#include <libexcept/exception.h>
+
 
 // snapdev lib
 //
 #include <snapdev/not_reached.h>
+
 
 // C++ lib
 //
 #include <memory>
 #include <numeric>
 #include <queue>
+
 
 // C lib
 //
@@ -49,11 +53,18 @@
 namespace cppthread
 {
 
-class cppthread_exception : public libexcept::exception
+class cppthread_logic_error : public libexcept::logic_exception_t
 {
 public:
-    explicit cppthread_exception(char const *        whatmsg) : snap_exception("snap_thread", whatmsg) {}
-    explicit cppthread_exception(std::string const & whatmsg) : snap_exception("snap_thread", whatmsg) {}
+    explicit cppthread_logic_error(char const *        whatmsg) : logic_exception_t("cppthread programmer error" + std::string(whatmsg)) {}
+    explicit cppthread_logic_error(std::string const & whatmsg) : logic_exception_t("cppthread programmer error" + whatmsg) {}
+};
+
+class cppthread_exception : public libexcept::exception_t
+{
+public:
+    explicit cppthread_exception(char const *        whatmsg) : exception_t("cppthread: " + std::string(whatmsg)) {}
+    explicit cppthread_exception(std::string const & whatmsg) : exception_t("cppthread: " + whatmsg) {}
 };
 
 class cppthread_exception_not_started : public cppthread_exception
@@ -91,14 +102,14 @@ public:
     explicit cppthread_exception_mutex_failed_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
 };
 
-class cppthread_exception_invalid_error : public snap_thread_exception
+class cppthread_exception_invalid_error : public cppthread_exception
 {
 public:
     explicit cppthread_exception_invalid_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
     explicit cppthread_exception_invalid_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
 };
 
-class cppthread_exception_system_error : public snap_thread_exception
+class cppthread_exception_system_error : public cppthread_exception
 {
 public:
     explicit cppthread_exception_system_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
@@ -954,7 +965,7 @@ public:
         {
             if(f_thread == nullptr)
             {
-                throw snap_logic_exception("cppthread_life pointer is nullptr");
+                throw cppthread_logic_error("cppthread_life pointer is nullptr");
             }
             if(!f_thread->start())
             {
@@ -976,9 +987,13 @@ public:
          */
         ~cppthread_life()
         {
-            //SNAP_LOG_TRACE() << "stopping cppthread_life...";
+            //advgetopt::log << log_level_t::debug
+            //               << "stopping cppthread_life..."
+            //               << end;
             f_thread->stop();
-            //SNAP_LOG_TRACE() << "cppthread_life stopped!";
+            //advgetopt::log << log_level_t::debug
+            //               << "cppthread_life stopped!"
+            //               << end;
         }
 
         cppthread_life & operator = (cppthread_life const & rhs) = delete;

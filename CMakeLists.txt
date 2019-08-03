@@ -32,6 +32,7 @@ cmake_minimum_required(VERSION 2.8.4)
 project(cppthread_library)
 
 find_package(SnapCMakeModules REQUIRED)
+find_package(AdvGetOpt        REQUIRED)
 find_package(LibExcept        REQUIRED)
 find_package(SnapDev          REQUIRED)
 find_package(SnapDoxygen              )

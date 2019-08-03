@@ -35,19 +35,22 @@ configure_file(
 )
 
 add_library( ${PROJECT_NAME} SHARED
-    cppthread.cpp
+    thread.cpp
     version.cpp
 )
 
 include_directories(
+    ${ADVGETOPT_INCLUDE_DIRS}
     ${LIBEXCEPT_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    ${ADVGETOPT_LIBRARIES}
     ${LIBEXCEPT_LIBRARIES}
+    pthread
 )
 
-set_target_properties( ${PROJECT_NAME} PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
     VERSION
         ${CPPTHREAD_VERSION_MAJOR}.${CPPTHREAD_VERSION_MINOR}
 

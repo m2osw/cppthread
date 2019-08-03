@@ -1,5 +1,6 @@
 // Snap Websites Server -- C++ object to handle threads
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// https://snapwebsites.org/project/cppthread
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,14 +30,16 @@
 
 // advgetopt lib
 //
-#include "cppthread/log.h"
+#include "advgetopt/log.h"
 
 
 // C lib
 //
 #include <signal.h>
+#include <string.h>
 #include <sys/syscall.h>
 #include <sys/sysinfo.h>
+#include <unistd.h>
 
 
 // last include
@@ -464,27 +467,39 @@ cppthread::snap_mutex::snap_mutex()
     int err(pthread_mutexattr_init(&mattr));
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex attribute structure could not be initialized, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex attribute structure could not be initialized, error #"
+                       << err
+                       << advgetopt::end;
         throw cppthread_exception_invalid_error("pthread_muteattr_init() failed");
     }
     err = pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex attribute structure type could not be setup, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex attribute structure type could not be setup, error #"
+                       << err
+                       << advgetopt::end;
         pthread_mutexattr_destroy(&mattr);
         throw cppthread_exception_invalid_error("pthread_muteattr_settype() failed");
     }
     err = pthread_mutex_init(&f_mutex, &mattr);
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex structure could not be initialized, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex structure could not be initialized, error #"
+                       << err
+                       << advgetopt::end;
         pthread_mutexattr_destroy(&mattr);
         throw cppthread_exception_invalid_error("pthread_mutex_init() failed");
     }
     err = pthread_mutexattr_destroy(&mattr);
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex attribute structure could not be destroyed, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex attribute structure could not be destroyed, error #"
+                       << err
+                       << advgetopt::end;
         pthread_mutex_destroy(&f_mutex);
         throw cppthread_exception_invalid_error("pthread_mutexattr_destroy() failed");
     }
@@ -494,14 +509,20 @@ cppthread::snap_mutex::snap_mutex()
     err = pthread_condattr_init(&cattr);
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex condition attribute structure could not be initialized, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex condition attribute structure could not be initialized, error #"
+                       << err
+                       << advgetopt::end;
         pthread_mutex_destroy(&f_mutex);
         throw cppthread_exception_invalid_error("pthread_condattr_init() failed");
     }
     err = pthread_cond_init(&f_condition, &cattr);
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex condition structure could not be initialized, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex condition structure could not be initialized, error #"
+                       << err
+                       << advgetopt::end;
         pthread_condattr_destroy(&cattr);
         pthread_mutex_destroy(&f_mutex);
         throw cppthread_exception_invalid_error("pthread_cond_init() failed");
@@ -509,7 +530,10 @@ cppthread::snap_mutex::snap_mutex()
     err = pthread_condattr_destroy(&cattr);
     if(err != 0)
     {
-        SNAP_LOG_FATAL("a mutex condition attribute structure could not be destroyed, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex condition attribute structure could not be destroyed, error #"
+                       << err
+                       << advgetopt::end;
         pthread_mutex_destroy(&f_mutex);
         throw cppthread_exception_invalid_error("pthread_condattr_destroy() failed");
     }
@@ -536,18 +560,28 @@ cppthread::snap_mutex::~snap_mutex()
     {
         // we cannot legally throw in a destructor so we instead generate a fatal error
         //
-        SNAP_LOG_FATAL("a mutex is being destroyed when its reference count is ")(f_reference_count)(" instead of zero.");
-        exit(1);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex is being destroyed when its reference count is "
+                       << f_reference_count
+                       << " instead of zero."
+                       << advgetopt::end;
+        std::terminate();
     }
     int err(pthread_cond_destroy(&f_condition));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex condition destruction generated error #")(err);
+        advgetopt::log << advgetopt::log_level_t::error
+                       << "a mutex condition destruction generated error #"
+                       << err
+                       << advgetopt::end;
     }
     err = pthread_mutex_destroy(&f_mutex);
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex destruction generated error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex destruction generated error #"
+                       << err
+                       << advgetopt::end;
     }
 }
 
@@ -570,7 +604,12 @@ void cppthread::snap_mutex::lock()
     int const err(pthread_mutex_lock(&f_mutex));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex lock generated error #")(err)(" -- ")(strerror(err));
+        advgetopt::log << advgetopt::log_level_t::error
+                       << "a mutex lock generated error #"
+                       << err
+                       << " -- "
+                       << strerror(err)
+                       << advgetopt::end;
         throw cppthread_exception_invalid_error("pthread_mutex_lock() failed");
     }
 
@@ -609,7 +648,12 @@ bool cppthread::snap_mutex::try_lock()
     }
 
     // another type of failure
-    SNAP_LOG_ERROR("a mutex try lock generated error #")(err)(" -- ")(strerror(err));
+    advgetopt::log << advgetopt::log_level_t::error
+                   << "a mutex try lock generated error #"
+                   << err
+                   << " -- "
+                   << strerror(err)
+                   << advgetopt::end;
     throw cppthread_exception_invalid_error("pthread_mutex_trylock() failed");
 }
 
@@ -634,7 +678,11 @@ void cppthread::snap_mutex::unlock()
     // We can't unlock if it wasn't locked before!
     if(f_reference_count <= 0UL)
     {
-        SNAP_LOG_FATAL("attempting to unlock a mutex when it is still locked ")(f_reference_count)(" times");
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "attempting to unlock a mutex when it is still locked "
+                       << f_reference_count
+                       << " times"
+                       << advgetopt::end;
         throw cppthread_exception_not_locked_error("unlock was called too many times");
     }
 
@@ -645,7 +693,12 @@ void cppthread::snap_mutex::unlock()
     int const err(pthread_mutex_unlock(&f_mutex));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex unlock generated error #")(err)(" -- ")(strerror(err));
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex unlock generated error #"
+                       << err
+                       << " -- "
+                       << strerror(err)
+                       << advgetopt::end;
         throw cppthread_exception_invalid_error("pthread_mutex_unlock() failed");
     }
 }
@@ -682,14 +735,22 @@ void cppthread::snap_mutex::wait()
     //       has to be at least once.
     //if(f_reference_count != 1UL)
     //{
-    //    SNAP_LOG_FATAL("attempting to wait on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
+    //    advgetopt::log << advgetopt::log_level_t::fatal
+    //                   << "attempting to wait on a mutex when it is not locked exactly once, current count is "
+    //                   << f_reference_count
+    //                   << advgetopt::end;
     //    throw cppthread_exception_not_locked_once_error();
     //}
     int const err(pthread_cond_wait(&f_condition, &f_mutex));
     if(err != 0)
     {
         // an error occurred!
-        SNAP_LOG_ERROR("a mutex conditional wait generated error #")(err)(" -- ")(strerror(err));
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex conditional wait generated error #"
+                       << err
+                       << " -- "
+                       << strerror(err)
+                       << advgetopt::end;
         throw cppthread_exception_mutex_failed_error("pthread_cond_wait() failed");
     }
 }
@@ -729,7 +790,12 @@ bool cppthread::snap_mutex::timed_wait(uint64_t const usecs)
     //       has to be at least once.
     //if(f_reference_count != 1UL)
     //{
-    //    SNAP_LOG_FATAL("attempting to timed wait ")(usec)(" usec on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
+    //  advgetopt::log << advgetopt::log_level_t::fatal
+    //                 << "attempting to timed wait "
+    //                 << usec
+    //                 << " usec on a mutex when it is not locked exactly once, current count is "
+    //                 << f_reference_count
+    //                 << advgetopt::end;
     //    throw cppthread_exception_not_locked_once_error();
     //}
 
@@ -740,7 +806,12 @@ bool cppthread::snap_mutex::timed_wait(uint64_t const usecs)
     if(gettimeofday(&vtime, nullptr) != 0)
     {
         err = errno;
-        SNAP_LOG_FATAL("gettimeofday() failed with errno: ")(err)(" -- ")(strerror(err));
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "gettimeofday() failed with errno: "
+                       << err
+                       << " -- "
+                       << strerror(err)
+                       << advgetopt::end;
         throw cppthread_exception_system_error("gettimeofday() failed");
     }
 
@@ -764,7 +835,12 @@ bool cppthread::snap_mutex::timed_wait(uint64_t const usecs)
         }
 
         // an error occurred!
-        SNAP_LOG_ERROR("a mutex conditional timed wait generated error #")(err)(" -- ")(strerror(err));
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex conditional timed wait generated error #"
+                       << err
+                       << " -- "
+                       << strerror(err)
+                       << advgetopt::end;
         throw cppthread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
@@ -800,7 +876,12 @@ bool cppthread::snap_mutex::dated_wait(uint64_t usec)
     //       has to be at least once.
     //if(f_reference_count != 1UL)
     //{
-    //    SNAP_LOG_FATAL("attempting to dated wait until ")(msec)(" msec on a mutex when it is not locked exactly once, current count is ")(f_reference_count);
+    //    advgetopt::log << advgetopt::log_level_t::fatal
+    //                   << "attempting to dated wait until "
+    //                   << usec
+    //                   << " msec on a mutex when it is not locked exactly once, current count is "
+    //                   << f_reference_count
+    //                   << advgetopt::end;
     //    throw cppthread_exception_not_locked_once_error();
     //}
 
@@ -818,7 +899,12 @@ bool cppthread::snap_mutex::dated_wait(uint64_t usec)
         }
 
         // an error occurred!
-        SNAP_LOG_ERROR("a mutex conditional dated wait generated error #")(err)(" -- ")(strerror(err));
+        advgetopt::log << advgetopt::log_level_t::error
+                       << "a mutex conditional dated wait generated error #"
+                       << err
+                       << " -- "
+                       << strerror(err)
+                       << advgetopt::end;
         throw cppthread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
@@ -845,7 +931,10 @@ void cppthread::snap_mutex::signal()
     int const err(pthread_cond_signal(&f_condition));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex condition signal generated error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex condition signal generated error #"
+                       << err
+                       << advgetopt::end;
         throw cppthread_exception_invalid_error("pthread_cond_signal() failed");
     }
 }
@@ -872,7 +961,10 @@ void cppthread::snap_mutex::broadcast()
     int const err(pthread_cond_broadcast(&f_condition));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("a mutex signal broadcast generated error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "a mutex signal broadcast generated error #"
+                       << err
+                       << advgetopt::end;
         throw cppthread_exception_invalid_error("pthread_cond_broadcast() failed");
     }
 }
@@ -1099,8 +1191,12 @@ cppthread::snap_runner::~snap_runner()
         // this is a bug; it could be that the object that derived from
         // the snap_runner calls gets destroyed under the thread controller's
         // nose and that could break a lot of things.
-        SNAP_LOG_FATAL("The Snap! thread runner named \"")(f_name)("\" is still marked as running when its object is being destroyed.");
-        exit(1);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "The Snap! thread runner named \""
+                       << f_name
+                       << "\" is still marked as running when its object is being destroyed."
+                       << advgetopt::end;
+        std::terminate();
     }
 }
 
@@ -1292,13 +1388,19 @@ cppthread::cppthread(std::string const & name, snap_runner * runner)
     int err(pthread_attr_init(&f_thread_attr));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("the thread attributes could not be initialized, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "the thread attributes could not be initialized, error #"
+                       << err
+                       << advgetopt::end;
         throw cppthread_exception_invalid_error("pthread_attr_init() failed");
     }
     err = pthread_attr_setdetachstate(&f_thread_attr, PTHREAD_CREATE_JOINABLE);
     if(err != 0)
     {
-        SNAP_LOG_ERROR("the thread detach state could not be initialized, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "the thread detach state could not be initialized, error #"
+                       << err
+                       << advgetopt::end;
         pthread_attr_destroy(&f_thread_attr);
         throw cppthread_exception_invalid_error("pthread_attr_setdetachstate() failed");
     }
@@ -1334,7 +1436,10 @@ cppthread::~cppthread()
     int const err(pthread_attr_destroy(&f_thread_attr));
     if(err != 0)
     {
-        SNAP_LOG_ERROR("the thread attributes could not be destroyed, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::error
+                       << "the thread attributes could not be destroyed, error #"
+                       << err
+                       << advgetopt::end;
     }
 }
 
@@ -1488,7 +1593,9 @@ void cppthread::internal_run()
     {
         // ... any other exception terminates the whole process ...
         //
-        SNAP_LOG_FATAL("thread got an unknown exception (a.k.a. non-std::exception), exiting process");
+        advgetopt::log << advgetopt::log_level_t::fatal
+                       << "thread got an unknown exception (a.k.a. non-std::exception), exiting process."
+                       << advgetopt::end;
 
         // rethrow, our goal is not to ignore the exception, only to
         // have a log about it
@@ -1525,13 +1632,17 @@ bool cppthread::start()
 
     if(f_running || f_started)
     {
-        SNAP_LOG_WARNING("the thread is already running");
+        advgetopt::log << advgetopt::log_level_t::warning
+                       << "the thread is already running"
+                       << advgetopt::end;
         return false;
     }
 
     if(!f_runner->is_ready())
     {
-        SNAP_LOG_WARNING("the thread runner is not ready");
+        advgetopt::log << advgetopt::log_level_t::warning
+                       << "the thread runner is not ready"
+                       << advgetopt::end;
         return false;
     }
 
@@ -1545,7 +1656,10 @@ bool cppthread::start()
     {
         f_running = false;
 
-        SNAP_LOG_ERROR("the thread could not be created, error #")(err);
+        advgetopt::log << advgetopt::log_level_t::error
+                       << "the thread could not be created, error #"
+                       << err
+                       << advgetopt::end;
         return false;
     }
 

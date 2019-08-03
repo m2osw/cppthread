@@ -35,7 +35,7 @@
 
 // snapdev lib
 //
-#include    <snapdev/thread.h>
+#include    <snapdev/not_reached.h>
 
 
 // C lib
