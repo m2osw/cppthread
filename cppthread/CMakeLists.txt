@@ -34,7 +34,11 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/version.h
 )
 
-add_library( ${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME} SHARED
+    guard.cpp
+    life.cpp
+    mutex.cpp
+    runner.cpp
     thread.cpp
     version.cpp
 )
@@ -74,7 +78,13 @@ install(
 
 install(
     FILES
+        exception.h
+        fifo.h
+        guard.h
+        mutex.h
+        runner.h
         thread.h
+        worker.h
         ${CMAKE_CURRENT_BINARY_DIR}/version.h
 
     DESTINATION

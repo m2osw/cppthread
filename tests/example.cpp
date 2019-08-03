@@ -30,7 +30,15 @@
 
 // cppthread lib
 //
+#include    <cppthread/exception.h>
+#include    <cppthread/fifo.h>
+#include    <cppthread/guard.h>
+#include    <cppthread/life.h>
+#include    <cppthread/mutex.h>
+#include    <cppthread/pool.h>
+#include    <cppthread/runner.h>
 #include    <cppthread/thread.h>
+#include    <cppthread/worker.h>
 
 
 // snapdev lib

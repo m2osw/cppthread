@@ -27,6 +27,10 @@
 //
 #include "cppthread/thread.h"
 
+#include "cppthread/exception.h"
+#include "cppthread/guard.h"
+#include "cppthread/runner.h"
+
 
 // advgetopt lib
 //
@@ -36,7 +40,6 @@
 // C lib
 //
 #include <signal.h>
-#include <string.h>
 #include <sys/syscall.h>
 #include <sys/sysinfo.h>
 #include <unistd.h>
@@ -53,1305 +56,7 @@ namespace cppthread
 {
 
 
-/** \class cppthread_exception
- * \brief To catch any thread exception, catch this base thread exception.
- *
- * This is the base thread exception for all the thread exceptions.
- * You may catch this exception to catch any of the thread exceptions.
- */
 
-/** \class cppthread_exception_not_started
- * \brief Tried to start a thread and it failed.
- *
- * When using the thread_safe object which is created on the FIFO, one
- * guarantee is that the thread actually starts. If the threads cannot
- * be started, this exception is raised.
- */
-
-/** \class cppthread_exception_in_use_error
- * \brief One thread runner can be attached to one thread.
- *
- * This exception is raised if a thread notices that a runner being
- * attached to it is already attached to another thread. This is just
- * not possible. One thread runner can only be running in one thread
- * not two or three (it has to stop and be removed from another thread
- * first otherwise.)
- */
-
-/** \class cppthread_exception_not_locked_error
- * \brief A mutex cannot be unlocked if not locked.
- *
- * Each time we lock a mutex, we increase a counter. Each time we nulock a
- * mutex we decrease a counter. If you try to unlock when the counter is
- * zero, you have a lock/unlock discrepancy. This exception is raised
- * when such is discovered.
- */
-
-/** \class cppthread_exception_not_locked_once_error
- * \brief When calling wait() the mutex should be locked once.
- *
- * When calling the wait() instruction, the mutex has to be locked once.
- *
- * At this time this is commented out as it caused problems. We probably
- * need to test that it is at least locked once and not exactly once.
- */
-
-/** \class cppthread_exception_mutex_failed_error
- * \brief A mutex failed.
- *
- * In most cases, a mutex will fail if the input buffer is not considered
- * valid. (i.e. it was not initialized and it does not look like a mutex.)
- */
-
-/** \class cppthread_exception_invalid_error
- * \brief An invalid parameter or value was detected.
- *
- * This exception is raised when a parameter or a variable member or some
- * other value is out of range or generally not valid for its purpose.
- */
-
-/** \class cppthread_exception_system_error
- * \brief We called a system function and it failed.
- *
- * This exception is raised if a system function call fails.
- */
-
-
-
-
-
-
-/** \class cppthread::cppthread_life
- * \brief An RAII class managing the lifetime of a thread.
- *
- * This class is used to manage the life of a thread: the time it runs.
- * The constructor calls the cppthread::start() function and
- * the destructor makes sure to call the cppthread::stop() function.
- *
- * If you have a specific block or another class that should run a
- * thread for the lifetime of the block or class object, then this
- * is well adapted.
- *
- * \note
- * This class is not responsible for deleting the thread at the
- * end. It only manages the time while the thread runs.
- */
-
-
-
-
-
-/** \class cppthread::snap_fifo
- * \brief Create a thread safe FIFO.
- *
- * This template defines a thread safe FIFO which is also a mutex.
- * You should use this snap_fifo object to lock your thread and
- * send messages/data across various threads. The FIFO itself is
- * a mutex so you can use it to lock the threads as with a normal
- * mutex:
- *
- * \code
- *  {
- *      cppthread::snap_lock lock(f_messages);
- *      ...
- *  }
- * \endcode
- *
- * \note
- * It is recommanded that you use a smart pointer to your data as
- * the type T. This way you do not have to deal with copies in these
- * FIFOs. However, if your data is very small (a few integers, a
- * small string or two) then you may also use a type T which will
- * be shared by copy. A smart pointer, thou
- *
- * \tparam T  the type of data that the FIFO will handle.
- */
-
-/** \typedef cppthread::snap_fifo::items_t
- * \brief The container type of our items.
- *
- * All of the FIFO items are pushed and popped from this type of
- * container.
- */
-
-/** \typedef cppthread::snap_fifo::value_type
- * \brief The type of value to push and pop from the FIFO.
- *
- * This typedef returns the type T of the template.
- */
-
-/** \typedef cppthread::snap_fifo::fifo_type
- * \brief The type of the FIFO as a typedef.
- *
- * This is a declaration of the FIFO type from the template type T.
- * It can be useful in meta programming.
- */
-
-/** \typedef cppthread::snap_fifo::pointer_t;
- * \brief A smart pointer to the FIFO.
- *
- * You may want to create FIFOs on the heap in which case we strongly
- * advice that you use this shared pointer type to old those FIFOs.
- *
- * It is otherwise possible to have the FIFO as a variable member of
- * your thread. One thing to consider, though, if that if thread A
- * owns a FIFO and shares it with thread B, then you must make sure
- * that B is done before destroying A.
- */
-
-/** \fn cppthread::snap_fifo::push_back(T const & v)
- * \brief Push data on this FIFO.
- *
- * This function appends data on the FIFO queue. The function
- * has the side effect to wake up another thread if such is
- * currently waiting for data on the same FIFO.
- *
- * \note
- * You can also wake up the other thread by calling the signal()
- * function directly. This is especially useful after you marked
- * the FIFO as done to make sure that all the worker threads
- * wake up and exit cleanly.
- *
- * \attention
- * Remember that if a thread is not currently waiting on the
- * signal, calling signal is not likely to do anything except
- * for the one next thread that waits on that signal.
- *
- * \exception cppthread_exception_invalid_error
- * Do not call this function after calling done(), it will raise
- * this exception if you do so.
- *
- * \param[in] v  The value to be pushed on the FIFO queue.
- *
- * \return true if the value was pushed, false otherwise.
- *
- * \sa done()
- */
-
-/** \fn cppthread::snap_fifo::pop_front(T & v, int64_t const usecs)
- * \brief Retrieve one value from the FIFO.
- *
- * This function retrieves one value from the thread FIFO.
- * If necessary, the function can wait for a value to be
- * received. The wait works as defined in the semaphore
- * wait() function:
- *
- * \li -1 -- wait forever (use with caution as this prevents
- *           the STOP event from working.)
- * \li 0 -- do not wait if there is no data, return immediately
- * \li +1 and more -- wait that many microseconds
- *
- * If the function works (returns true,) then \p v is set
- * to the value being popped. Otherwise v is not modified
- * and the function returns false.
- *
- * \note
- * Because of the way the pthread conditions are implemented
- * it is possible that the condition was already raised
- * when you call this function. This means the wait, even if
- * you used a value of -1 or 1 or more, will not happen.
- *
- * \note
- * If the function returns false, \p v is not set to anything
- * so it still has the value it had when calling the function.
- *
- * \param[out] v  The value read.
- * \param[in] usecs  The number of microseconds to wait.
- *
- * \return true if a value was popped, false otherwise.
- */
-
-/** \fn cppthread::snap_fifo::clear()
- * \brief Clear the current FIFO.
- *
- * This function can be used to clear the FIFO. Right after this
- * call, the FIFO will be empty. All the objects that were pushed
- * in the FIFO will be removed. It is your responsibility to ensure
- * they get cleaned up appropriately.
- *
- * \note
- * This function is often used along the done() function to quickly
- * terminate threads.
- *
- * \sa done()
- */
-
-/** \fn cppthread::snap_fifo::empty() const
- * \brief Test whether the FIFO is empty.
- *
- * This function checks whether the FIFO is empty and if so
- * returns true, otherwise it returns false.
- *
- * The function does not check the semaphore. Instead it
- * checks the size of the FIFO itself.
- *
- * \return true if the FIFO is empty.
- */
-
-/** \fn cppthread::snap_fifo::size() const
- * \brief Return the number of items in the FIFO.
- *
- * This function returns the number of items currently added to
- * the FIFO. This can be used by the caller to avoid flooding
- * the FIFO, if at all possible.
- *
- * The complexity of this function is O(1).
- *
- * \return the number of items in the FIFO.
- */
-
-/** \fn cppthread::snap_fifo::byte_size() const
- * \brief Return the total size of the FIFO uses in memory.
- *
- * This function returns the sum of each element size() function.
- *
- * \note
- * This calculation does not include the amount of bytes used by
- * the FIFO itself. It only includes the size of the elements,
- * which in most cases is what you want anyway.
- *
- * The complexity of this function is O(n).
- *
- * \return the byte size of the FIFO.
- */
-
-/** \fn cppthread::snap_fifo::done(bool clear)
- * \brief Mark the FIFO as done.
- *
- * By default the FIFO is not done. Once you are finished with it
- * and will never push any more data to it, call this function.
- * This flag is used by worker threads to know whether they should
- * wait for more data or just exit.
- *
- * This is rarely used with regular threads. It is more of a feature
- * for worker threads.
- *
- * \note
- * If the FIFO is empty, this function also broadcasts a signal
- * to all the worker threads so that way they can exit.
- *
- * \param[in] clear  Whether the function should also call clear()
- *
- * \sa clear()
- */
-
-/** \fn cppthread::snap_fifo::is_done() const
- * \brief Check whether the FIFO was marked as done.
- *
- * When a child process calls pop_front() and the function returns
- * false, it means the FIFO is empty. On return, the thread may
- * then check whether is_done() is true. If so, then the thread
- * is expected to exit (no more data will even be added to the
- * FIFO so you might as well leave.)
- *
- * \return true if the thread is expected to exit, false while still
- *         running.
- */
-
-/** \var cppthread::snap_fifo::f_queue
- * \brief The actual FIFO.
- *
- * This variable member holds the actual data in this FIFO
- * object.
- */
-
-/** \var cppthread::snap_fifo::f_done
- * \brief Whether the FIFO is done.
- *
- * This flag tells us whether the FIFO is done or not.
- */
-
-/** \var cppthread::snap_fifo::f_broadcast
- * \brief Whether the done() function called broadcast().
- *
- * This variable is set to true once the done() function called the
- * broadcast() function of the mutex. This way we avoid calling it
- * more than once even if you call the done() function multiple
- * times.
- */
-
-
-/** \class cppthread::snap_mutex
- * \brief A mutex object to ensures atomicity.
- *
- * This class is used by threads when some data accessed by more than
- * one thread is about to be accessed. In most cases it is used with the
- * snap_lock class so it is safe even in the event an exception is raised.
- *
- * The snap_mutex also includes a condition variable which can be signaled
- * using the signal() function. This wakes threads that are currently
- * waiting on the condition with one of the wait() functions.
- *
- * \note
- * We use a recursive mutex so you may lock the mutex any number of times.
- * It has to be unlocked that many times, of course.
- */
-
-/** \var cppthread::snap_mutex::f_mutex
- * \brief The pthread mutex.
- *
- * This variable member holds the pthread mutex. The snap_mutex
- * implementation manages this field as required.
- */
-
-
-/** \brief An inter-thread mutex to ensure unicity of execution.
- *
- * The mutex object is used to lock part of the code that needs to be run
- * by only one thread at a time. This is also called a critical section
- * and a memory barrier.
- *
- * In most cases one uses the snap_lock object to temporarily lock
- * the mutex using the FIFO to help ensure the mutex gets unlocked as
- * required in the event an exception occurs.
- *
- * \code
- * {
- *    cppthread::snap_lock lock(&my_mutex)
- *    ... // protected code
- * }
- * \endcode
- *
- * The lock can be tried to see whether another thread already has the
- * lock and fail if so. See the try_lock() function.
- *
- * The class also includes a condition in order to send signals and wait
- * on signals. There are two ways to send signals and three ways to wait.
- * Note that to call any one of the wait funtions you must first have the
- * mutex locked, what otherwise happens is undefined.
- *
- * \code
- * {
- *      // wake one waiting thread
- *      my_mutex.signal();
- *
- *      // wake all the waiting thread
- *      my_mutex.broadcast();
- *
- *      // wait on the signal forever
- *      {
- *          cppthread::snap_lock lock(&my_mutex);
- *          my_mutex.wait();
- *      }
- *
- *      // wait on the signal for the specified amount of time
- *      {
- *          cppthread::snap_lock lock(&my_mutex);
- *          my_mutex.timed_wait(1000000UL); // wait up to 1 second
- *      }
- *
- *      // wait on the signal for until date or later or the signal
- *      {
- *          cppthread::snap_lock lock(&my_mutex);
- *          my_mutex.dated_wait(date); // wait on signal or until date
- *      }
- * }
- * \endcode
- *
- * If you need a FIFO of messages between your threads, look at the
- * snap_fifo template.
- *
- * \note
- * Care must be used to always initialized a mutex before it
- * is possibly accessed by more than one thread. This is usually
- * the case in the constructor of your objects.
- *
- * \exception cppthread_exception_invalid_error
- * If any one of the initialization functions fails, this exception is
- * raised. The function also logs the error.
- */
-cppthread::snap_mutex::snap_mutex()
-{
-    // initialize the mutex
-    pthread_mutexattr_t mattr;
-    int err(pthread_mutexattr_init(&mattr));
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex attribute structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_muteattr_init() failed");
-    }
-    err = pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex attribute structure type could not be setup, error #"
-                       << err
-                       << advgetopt::end;
-        pthread_mutexattr_destroy(&mattr);
-        throw cppthread_exception_invalid_error("pthread_muteattr_settype() failed");
-    }
-    err = pthread_mutex_init(&f_mutex, &mattr);
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
-        pthread_mutexattr_destroy(&mattr);
-        throw cppthread_exception_invalid_error("pthread_mutex_init() failed");
-    }
-    err = pthread_mutexattr_destroy(&mattr);
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex attribute structure could not be destroyed, error #"
-                       << err
-                       << advgetopt::end;
-        pthread_mutex_destroy(&f_mutex);
-        throw cppthread_exception_invalid_error("pthread_mutexattr_destroy() failed");
-    }
-
-    // initialize the condition
-    pthread_condattr_t cattr;
-    err = pthread_condattr_init(&cattr);
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition attribute structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
-        pthread_mutex_destroy(&f_mutex);
-        throw cppthread_exception_invalid_error("pthread_condattr_init() failed");
-    }
-    err = pthread_cond_init(&f_condition, &cattr);
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
-        pthread_condattr_destroy(&cattr);
-        pthread_mutex_destroy(&f_mutex);
-        throw cppthread_exception_invalid_error("pthread_cond_init() failed");
-    }
-    err = pthread_condattr_destroy(&cattr);
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition attribute structure could not be destroyed, error #"
-                       << err
-                       << advgetopt::end;
-        pthread_mutex_destroy(&f_mutex);
-        throw cppthread_exception_invalid_error("pthread_condattr_destroy() failed");
-    }
-}
-
-
-/** \brief Clean up a mutex object.
- *
- * This function ensures that the mutex object is cleaned up, which means
- * the mutex and conditions get destroyed.
- *
- * This destructor verifies that the mutex is not currently locked. A
- * locked mutex can't be destroyed. If still locked, then an error is
- * sent to the logger and the function calls exit(1).
- */
-cppthread::snap_mutex::~snap_mutex()
-{
-    // Note that the following reference count test only ensure that
-    // you don't delete a mutex which is still locked; however, if
-    // you still have multiple threads running, we can't really know
-    // if another thread is not just about to use this thread...
-    //
-    if(f_reference_count != 0UL)
-    {
-        // we cannot legally throw in a destructor so we instead generate a fatal error
-        //
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex is being destroyed when its reference count is "
-                       << f_reference_count
-                       << " instead of zero."
-                       << advgetopt::end;
-        std::terminate();
-    }
-    int err(pthread_cond_destroy(&f_condition));
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "a mutex condition destruction generated error #"
-                       << err
-                       << advgetopt::end;
-    }
-    err = pthread_mutex_destroy(&f_mutex);
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex destruction generated error #"
-                       << err
-                       << advgetopt::end;
-    }
-}
-
-
-/** \brief Lock a mutex
- *
- * This function locks the mutex. The function waits until the mutex is
- * available if it is not currently available. To avoid waiting one may
- * want to use the try_lock() function instead.
- *
- * Although the function cannot fail, the call can lock up a process if
- * two or more mutexes are used and another thread is already waiting
- * on this process.
- *
- * \exception cppthread_exception_invalid_error
- * If the lock fails, this exception is raised.
- */
-void cppthread::snap_mutex::lock()
-{
-    int const err(pthread_mutex_lock(&f_mutex));
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "a mutex lock generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_mutex_lock() failed");
-    }
-
-    // note: we do not need an atomic call since we
-    //       already know we are running alone here...
-    ++f_reference_count;
-}
-
-
-/** \brief Try locking the mutex.
- *
- * This function tries locking the mutex. If the mutex cannot be locked
- * because another process already locked it, then the function returns
- * immediately with false.
- *
- * \exception cppthread_exception_invalid_error
- * If the lock fails, this exception is raised.
- *
- * \return true if the lock succeeded, false otherwise.
- */
-bool cppthread::snap_mutex::try_lock()
-{
-    int const err(pthread_mutex_trylock(&f_mutex));
-    if(err == 0)
-    {
-        // note: we do not need an atomic call since we
-        //       already know we are running alone here...
-        ++f_reference_count;
-        return true;
-    }
-
-    // failed because another thread has the lock?
-    if(err == EBUSY)
-    {
-        return false;
-    }
-
-    // another type of failure
-    advgetopt::log << advgetopt::log_level_t::error
-                   << "a mutex try lock generated error #"
-                   << err
-                   << " -- "
-                   << strerror(err)
-                   << advgetopt::end;
-    throw cppthread_exception_invalid_error("pthread_mutex_trylock() failed");
-}
-
-
-/** \brief Unlock a mutex.
- *
- * This function unlock the specified mutex. The function must be called
- * exactly once per call to the lock() function, or successful call to
- * the try_lock() function.
- *
- * The unlock never waits.
- *
- * \exception cppthread_exception_invalid_error
- * If the unlock fails, this exception is raised.
- *
- * \exception cppthread_exception_not_locked_error
- * If the function is called too many times, then the lock count is going
- * to be zero and this exception will be raised.
- */
-void cppthread::snap_mutex::unlock()
-{
-    // We can't unlock if it wasn't locked before!
-    if(f_reference_count <= 0UL)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "attempting to unlock a mutex when it is still locked "
-                       << f_reference_count
-                       << " times"
-                       << advgetopt::end;
-        throw cppthread_exception_not_locked_error("unlock was called too many times");
-    }
-
-    // NOTE: we do not need an atomic call since we
-    //       already know we are running alone here...
-    --f_reference_count;
-
-    int const err(pthread_mutex_unlock(&f_mutex));
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex unlock generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_mutex_unlock() failed");
-    }
-}
-
-
-/** \brief Wait on a mutex condition.
- *
- * At times it is useful to wait on a mutex to become available without
- * polling the mutex (which uselessly wastes precious processing time.)
- * This function can be used to wait on a mutex condition.
- *
- * This version of the wait() blocks until a signal is received.
- *
- * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredicatable ways.
- *
- * \exception cppthread_exception_not_locked_once_error
- * This exception is raised if the reference count is not exactly 1.
- * In other words, the mutex must be locked by the caller but only
- * one time.
- *
- * \exception cppthread_exception_mutex_failed_error
- * This exception is raised in the event the conditional wait fails.
- */
-void cppthread::snap_mutex::wait()
-{
-    // For any mutex wait to work, we MUST have the
-    // mutex locked already and just one time.
-    //
-    // note: the 1 time is just for assurance that it will
-    //       work in most cases; it should work even when locked
-    //       multiple times, but it is less likely. For sure, it
-    //       has to be at least once.
-    //if(f_reference_count != 1UL)
-    //{
-    //    advgetopt::log << advgetopt::log_level_t::fatal
-    //                   << "attempting to wait on a mutex when it is not locked exactly once, current count is "
-    //                   << f_reference_count
-    //                   << advgetopt::end;
-    //    throw cppthread_exception_not_locked_once_error();
-    //}
-    int const err(pthread_cond_wait(&f_condition, &f_mutex));
-    if(err != 0)
-    {
-        // an error occurred!
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex conditional wait generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_mutex_failed_error("pthread_cond_wait() failed");
-    }
-}
-
-
-/** \brief Wait on a mutex condition with a time limit.
- *
- * At times it is useful to wait on a mutex to become available without
- * polling the mutex, but only for some time. This function waits for
- * the number of specified micro seconds. The function returns early if
- * the condition was triggered. Otherwise it waits until the specified
- * number of micro seconds elapsed and then returns.
- *
- * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredicatable ways.
- *
- * \exception cppthread_exception_system_error
- * This exception is raised if a function returns an unexpected error.
- *
- * \exception cppthread_exception_mutex_failed_error
- * This exception is raised when the mutex wait function fails.
- *
- * \param[in] usecs  The maximum number of micro seconds to wait until you
- *                   receive the signal.
- *
- * \return true if the condition was raised, false if the wait timed out.
- */
-bool cppthread::snap_mutex::timed_wait(uint64_t const usecs)
-{
-    // For any mutex wait to work, we MUST have the
-    // mutex locked already and just one time.
-    //
-    // note: the 1 time is just for assurance that it will
-    //       work in most cases; it should work even when locked
-    //       multiple times, but it is less likely. For sure, it
-    //       has to be at least once.
-    //if(f_reference_count != 1UL)
-    //{
-    //  advgetopt::log << advgetopt::log_level_t::fatal
-    //                 << "attempting to timed wait "
-    //                 << usec
-    //                 << " usec on a mutex when it is not locked exactly once, current count is "
-    //                 << f_reference_count
-    //                 << advgetopt::end;
-    //    throw cppthread_exception_not_locked_once_error();
-    //}
-
-    int err(0);
-
-    // get time now
-    struct timeval vtime;
-    if(gettimeofday(&vtime, nullptr) != 0)
-    {
-        err = errno;
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "gettimeofday() failed with errno: "
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_system_error("gettimeofday() failed");
-    }
-
-    // now + user specified usec
-    struct timespec timeout;
-    timeout.tv_sec = vtime.tv_sec + usecs / 1000000ULL;
-    uint64_t micros(vtime.tv_usec + usecs % 1000000ULL);
-    if(micros > 1000000ULL)
-    {
-        timeout.tv_sec++;
-        micros -= 1000000ULL;
-    }
-    timeout.tv_nsec = static_cast<long>(micros * 1000ULL);
-
-    err = pthread_cond_timedwait(&f_condition, &f_mutex, &timeout);
-    if(err != 0)
-    {
-        if(err == ETIMEDOUT)
-        {
-            return false;
-        }
-
-        // an error occurred!
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex conditional timed wait generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
-    }
-
-    return true;
-}
-
-
-/** \brief Wait on a mutex until the specified date.
- *
- * This function waits on the mutex condition to be signaled up until the
- * specified date is passed.
- *
- * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredicatable ways.
- *
- * \exception cppthread_exception_mutex_failed_error
- * This exception is raised whenever the thread wait functionf fails.
- *
- * \param[in] usec  The date when the mutex times out in microseconds.
- *
- * \return true if the condition occurs before the function times out,
- *         false if the function times out.
- */
-bool cppthread::snap_mutex::dated_wait(uint64_t usec)
-{
-    // For any mutex wait to work, we MUST have the
-    // mutex locked already and just one time.
-    //
-    // note: the 1 time is just for assurance that it will
-    //       work in most cases; it should work even when locked
-    //       multiple times, but it is less likely. For sure, it
-    //       has to be at least once.
-    //if(f_reference_count != 1UL)
-    //{
-    //    advgetopt::log << advgetopt::log_level_t::fatal
-    //                   << "attempting to dated wait until "
-    //                   << usec
-    //                   << " msec on a mutex when it is not locked exactly once, current count is "
-    //                   << f_reference_count
-    //                   << advgetopt::end;
-    //    throw cppthread_exception_not_locked_once_error();
-    //}
-
-    // setup the timeout date
-    struct timespec timeout;
-    timeout.tv_sec = static_cast<long>(usec / 1000000ULL);
-    timeout.tv_nsec = static_cast<long>((usec % 1000000ULL) * 1000ULL);
-
-    int const err(pthread_cond_timedwait(&f_condition, &f_mutex, &timeout));
-    if(err != 0)
-    {
-        if(err == ETIMEDOUT)
-        {
-            return false;
-        }
-
-        // an error occurred!
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "a mutex conditional dated wait generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
-    }
-
-    return true;
-}
-
-
-/** \brief Signal a mutex.
- *
- * Our mutexes include a condition that get signaled by calling this
- * function. This function wakes up one listening thread.
- *
- * The function ensures that the mutex is locked before broadcasting
- * the signal so you do not have to lock the mutex yourself.
- *
- * \exception cppthread_exception_invalid_error
- * If one of the pthread system functions return an error, the function
- * raises this exception.
- */
-void cppthread::snap_mutex::signal()
-{
-    snap_lock lock_mutex(*this);
-
-    int const err(pthread_cond_signal(&f_condition));
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition signal generated error #"
-                       << err
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_cond_signal() failed");
-    }
-}
-
-
-/** \brief Broadcast a mutex signal.
- *
- * Our mutexes include a condition that get signaled by calling this
- * function. This function actually signals all the threads that are
- * currently listening to the mutex signal. The order in which the
- * threads get awaken is unspecified.
- *
- * The function ensures that the mutex is locked before broadcasting
- * the signal so you do not have to lock the mutex yourself.
- *
- * \exception cppthread_exception_invalid_error
- * If one of the pthread system functions return an error, the function
- * raises this exception.
- */
-void cppthread::snap_mutex::broadcast()
-{
-    snap_lock lock_mutex(*this);
-
-    int const err(pthread_cond_broadcast(&f_condition));
-    if(err != 0)
-    {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex signal broadcast generated error #"
-                       << err
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_cond_broadcast() failed");
-    }
-}
-
-
-
-
-
-/** \class cppthread::snap_lock
- * \brief Lock a mutex in an RAII manner.
- *
- * This class is used to lock mutexes in a safe manner in regard to
- * exceptions. It is extremely important to lock all mutexes before
- * a thread quits otherwise the application will lock up.
- *
- * \code
- *    {
- *        snap_lock lock(my_mutex);
- *        ... // atomic work
- *    }
- * \endcode
- */
-
-
-/** \var cppthread::snap_lock::f_mutex
- * \brief The mutex used by the lock class.
- *
- * Whenever you want to lock a part of your code so only one thread
- * runs it at any given time, you want to use a lock. This lock
- * makes use of a mutex that you pass to it on construction.
- *
- * The snap_lock object keeps a reference to your mutex and uses
- * it to lock on construction and unlock on destruction. This
- * generates a perfect safe guard around your code. Safe guard
- * which is exception safe since it will still get unlocked when
- * an exception occurs.
- *
- * \warning
- * Note that it is not safe if you get a Unix signal. The lock
- * will very likely still be in place if such a signal happens
- * while within the lock.
- */
-
-
-
-
-
-/** \brief Lock a mutex.
- *
- * This function locks the specified mutex and keep track of the lock
- * until the destructor is called.
- *
- * The mutex parameter cannot be a reference to a nullptr pointer.
- *
- * \param[in] mutex  The Snap! mutex to lock.
- */
-cppthread::snap_lock::snap_lock(snap_mutex & mutex)
-    : f_mutex(&mutex)
-{
-    if(!f_mutex)
-    {
-        // mutex is mandatory
-        //
-        throw cppthread_exception_invalid_error("mutex missing in snap_lock() constructor");
-    }
-    f_mutex->lock();
-}
-
-
-/** \brief Ensure that the mutex was unlocked.
- *
- * The destructor ensures that the mutex gets unlocked. Note that it is
- * written to avoid exceptions, however, if an exception occurs it ends
- * up calling exit(1).
- *
- * \note
- * If a function throws it logs information using the Snap! logger.
- */
-cppthread::snap_lock::~snap_lock()
-{
-    try
-    {
-        unlock();
-    }
-    catch(std::exception const & e)
-    {
-        // a log was already printed, we do not absolutely need another one
-        exit(1);
-    }
-}
-
-
-/** \brief Unlock this mutex.
- *
- * This function can be called any number of times. The first time it is
- * called, the mutex gets unlocked. Further calls (in most cases one more
- * when the destructor is called) have no effects.
- *
- * This function may throw an exception if the mutex unlock call
- * fails.
- */
-void cppthread::snap_lock::unlock()
-{
-    if(f_mutex != nullptr)
-    {
-        f_mutex->unlock();
-        f_mutex = nullptr;
-    }
-}
-
-
-
-
-/** \class cppthread::snap_runner
- * \brief The runner is the class that wraps the actual system thread.
- *
- * This class defines the actuall thread wrapper. This is very important
- * because when the main cppthread object gets destroyed and if it
- * were a system thread, the virtual tables would be destroyed and thus
- * invalid before you reached the ~cppthread() destructor. This means
- * any of the virtual functions could not get called.
- *
- * For this reason we have a two level thread objects implementation:
- * the cppthread which acts as a controller and the snap_runner which
- * is the object that is the actual system thread and thus which has the
- * run() virtual function: the function that gets called when the thread
- * starts running.
- */
-
-
-/** \typedef cppthread::snap_runner::pointer_t
- * \brief The shared pointer of a thread runner.
- *
- * This type is used to hold a smart pointer to a thread runner.
- *
- * Be very careful. Using a smart pointer does NOT mean that you can just
- * delete a snap_runner without first stopping the thread. Make sure to
- * have a cppthread object to manage your snap_running pointers (i.e you
- * can delete a cppthread, which will stop your snap_runner and then
- * delete the snap_runner.)
- */
-
-
-/** \typedef cppthread::snap_runner::vector_t
- * \brief A vector of threads.
- *
- * This type defines a vector of thread runners as used by the
- * cppthread::cppthread_pool template.
- *
- * Be careful as vectors are usually copyable and this one is because it
- * holds smart pointers to thread runners, not the actual thread. You
- * still only have one thread, just multiple instances of its pointer.
- * However, keep in mind that you can't just destroy a runner. The
- * thread it is runner must be stopped first. Please make sure to
- * have a cppthread or a cppthread::cppthread_pool to manage
- * your thread runners.
- */
-
-
-/** \var cppthread::snap_runner::f_mutex
- * \brief The mutex of this thread.
- *
- * Each thread is given its own mutex so it can handle its data safely.
- *
- * This mutex is expected to mainly be used by the thread and its parent.
- *
- * If you want to share data and mutexes between multiple threads,
- * you may want to consider using another mutex. For example, the
- * cppthread::snap_fifo is itself derived from the snap_mutex
- * class. So when you use a FIFO between multiple threads, the
- * lock/unlock mechanism is not using the mutex of your thread.
- */
-
-
-/** \var cppthread::snap_runner::f_thread
- * \brief A pointer back to the owner ("parent") of this runner
- *
- * When a snap_runner is created, it gets created by a specific \em parent
- * object. This pointer holds that parent.
- *
- * The runner uses this pointer to know whether it is still running
- * and to retrieve its identifier that the parent holds.
- */
-
-
-/** \var cppthread::snap_runner::f_name
- * \brief The name of this thread.
- *
- * Each thread is given a name. This can help greatly when debugging a
- * threaded environment with a large number of threads. That way you
- * can easily identify which thread did what and work you way to a
- * perfect software.
- *
- * On some systems it may be possible to give this name to the OS
- * which then can be displayed in tools listing processes and threads.
- */
-
-
-/** \brief Initializes the runner.
- *
- * The constructor expects a name. The name is mainly used in case a
- * problem occur and we want to log a message. That way you will know
- * which thread runner caused a problem.
- *
- * \param[in] name  The name of this thread runner.
- */
-cppthread::snap_runner::snap_runner(std::string const & name)
-    : f_name(name)
-{
-}
-
-
-/** \brief The destructor checks that the thread was stopped.
- *
- * This function verifies that the thread was stopped before the
- * object gets destroyed (and is likely to break something along
- * the way.)
- */
-cppthread::snap_runner::~snap_runner()
-{
-    // the thread should never be set when the runner gets deleted
-    if(f_thread)
-    {
-        // this is a bug; it could be that the object that derived from
-        // the snap_runner calls gets destroyed under the thread controller's
-        // nose and that could break a lot of things.
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "The Snap! thread runner named \""
-                       << f_name
-                       << "\" is still marked as running when its object is being destroyed."
-                       << advgetopt::end;
-        std::terminate();
-    }
-}
-
-
-/** \brief Retrieve the name of the runner.
- *
- * This function returns the name of the runner as specified in the
- * constructor.
- *
- * Since the name is read-only, it will always match one to one what
- * you passed on.
- *
- * \return The name of this thread runner.
- */
-std::string const & cppthread::snap_runner::get_name() const
-{
-    return f_name;
-}
-
-
-/** \brief Check whether this thread runner is ready.
- *
- * By default a thread runner is considered ready. If you reimplement this
- * function it is possible to tell the thread controller that you are not
- * ready. This means the start() function will fail and return false.
- *
- * \return true by default, can return false to prevent a start() command.
- */
-bool cppthread::snap_runner::is_ready() const
-{
-    return true;
-}
-
-
-/** \brief Whether the thread should continue running.
- *
- * This function checks whether the user who handles the controller asked
- * the thread to quit. If so, then the function returns false. If not
- * the function returns true.
- *
- * The function can be reimplemented in your runner. In that case, the
- * runner implementation should probably call this function too in order
- * to make sure that the stop() function works.
- *
- * It is expected that your run() function implements a loop that checks
- * this flag on each iteration with iterations that take as little time
- * as possible.
- *
- * \code
- * void my_runner::run()
- * {
- *    while(continue_running())
- *    {
- *       // do some work
- *       ...
- *    }
- * }
- * \endcode
- *
- * \return true if the thread is expected to continue running.
- */
-bool cppthread::snap_runner::continue_running() const
-{
-    snap_lock lock(f_mutex);
-    if(f_thread == nullptr)
-    {
-        return true;
-    }
-    return !f_thread->is_stopping();
-}
-
-
-/** \fn cppthread::snap_runner::run();
- * \brief This virtual function represents the code run by the thread.
- *
- * The run() function is the one you have to implement in order to have
- * something to execute when the thread is started.
- *
- * To exit the thread, simply return from the run() function.
- */
-
-
-/** \brief Retrieve the thread controller linked to this runner.
- *
- * Each runner is assigned a thread controller whenever the cppthread
- * is created (they get attached, in effect.) Once the cppthread is
- * destroyed, the pointer goes back to nullptr.
- *
- * \return A cppthread pointer or nullptr.
- */
-cppthread * cppthread::snap_runner::get_thread() const
-{
-    return f_thread;
-}
-
-
-/** \brief Get this runner thread identifier.
- *
- * This function returns the thread identifier of the thread running
- * this runner run() function.
- *
- * This function can be called from any thread and the correct value
- * will be returned.
- *
- * \return The thread identifier.
- */
-pid_t cppthread::snap_runner::gettid() const
-{
-    return f_thread->get_thread_tid();
-}
-
-
-
-
-
-
-
-
-
-
-
-/** \class cppthread
- * \brief A thread object that ensures proper usage of system threads.
- *
- * This class is used to handle threads. It should NEVER be used, however,
- * there are some very specific cases where a thread is necessary to make
- * sure that main process doesn't get stuck. For example, the process
- * environment using pipes requires threads to read and write pipes
- * because otherwise the processes could lock up.
- */
-
-
-/** \typedef cppthread::pointer_t
- * \brief The shared pointer for a thread object.
- *
- * This type is used to hold a smart pointer to a thread.
- *
- * This smart pointer is safe. It can be used to hold a thread object and
- * when it goes out of scope, it properly ends the corresponding thread
- * runner (the cppthread::snap_runner) and returns.
- *
- * Be cautious because the smart pointer of a snap_runner is not actually
- * safe to delete without first stopping the thread. Make sure to manage
- * all your threads in with two objects, making sure that the thread goes
- * out of scope first so it can stop your thread before your thread object
- * gets destroyed.
- */
-
-
-/** \typedef cppthread::vector_t
- * \brief A vector of threads.
- *
- * This type defines a vector of threads. Since each entry in the vector
- * is a smart pointer, it is safe to use this type.
- */
 
 
 /** \brief Initialize the thread object.
@@ -1372,7 +77,7 @@ pid_t cppthread::snap_runner::gettid() const
  * \param[in] name  The name of the process.
  * \param[in] runner  The runner (the actual thread) to handle.
  */
-cppthread::cppthread(std::string const & name, snap_runner * runner)
+cppthread::cppthread(std::string const & name, runner * runner)
     : f_name(name)
     , f_runner(runner)
 {
@@ -1471,9 +176,9 @@ std::string const & cppthread::get_name() const
  * Therefore this function never returns a null pointer. However, the
  * dynamic_cast<>() function may return a nullptr.
  *
- * \return The snap_runner object attached to this cppthread.
+ * \return The runner object attached to this cppthread.
  */
-cppthread::snap_runner * cppthread::get_runner() const
+runner * cppthread::get_runner() const
 {
     return f_runner;
 }
@@ -1497,7 +202,7 @@ cppthread::snap_runner * cppthread::get_runner() const
  */
 bool cppthread::is_running() const
 {
-    snap_lock lock(f_mutex);
+    guard lock(f_mutex);
     return f_running;
 }
 
@@ -1513,7 +218,7 @@ bool cppthread::is_running() const
  */
 bool cppthread::is_stopping() const
 {
-    snap_lock lock(f_mutex);
+    guard lock(f_mutex);
     return f_stopping;
 }
 
@@ -1563,14 +268,14 @@ void * func_internal_start(void * thread)
 void cppthread::internal_run()
 {
     {
-        snap_lock lock(f_mutex);
+        guard lock(f_mutex);
         f_tid = gettid();
     }
 
     try
     {
         {
-            snap_lock lock(f_mutex);
+            guard lock(f_mutex);
             f_started = true;
             f_mutex.signal();
         }
@@ -1607,7 +312,7 @@ void cppthread::internal_run()
     // fails, we have a big problem... (i.e. invalid mutex or more unlock
     // than locks)
     {
-        snap_lock lock(f_mutex);
+        guard lock(f_mutex);
         f_running = false;
         f_tid = -1;
         f_mutex.signal();
@@ -1628,7 +333,7 @@ void cppthread::internal_run()
  */
 bool cppthread::start()
 {
-    snap_lock lock(f_mutex);
+    guard lock(f_mutex);
 
     if(f_running || f_started)
     {
@@ -1689,7 +394,7 @@ bool cppthread::start()
 void cppthread::stop()
 {
     {
-        snap_lock lock(f_mutex);
+        guard lock(f_mutex);
 
         if(!f_running && !f_started)
         {
@@ -1748,7 +453,7 @@ void cppthread::stop()
  */
 pid_t cppthread::get_thread_tid() const
 {
-    snap_lock lock(f_mutex);
+    guard lock(f_mutex);
     return f_tid;
 }
 
@@ -1756,11 +461,11 @@ pid_t cppthread::get_thread_tid() const
 /** \brief Retrieve a reference to the thread mutex.
  *
  * This function returns a reference to this thread mutex. Note that
- * the `snap_runner` has its own mutex as well.
+ * the `runner` has its own mutex as well.
  *
  * \return This thread's mutex.
  */
-cppthread::snap_mutex & cppthread::get_thread_mutex() const
+mutex & cppthread::get_thread_mutex() const
 {
     return f_mutex;
 }
@@ -1787,7 +492,7 @@ cppthread::snap_mutex & cppthread::get_thread_mutex() const
  */
 bool cppthread::kill(int sig)
 {
-    snap_lock lock(f_mutex);
+    guard lock(f_mutex);
     if(f_running)
     {
         // pthread_kill() returns zero on success, otherwise it returns
@@ -1886,6 +591,78 @@ pid_t cppthread::gettid()
 {
     return static_cast<pid_t>(syscall(SYS_gettid));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** \class cppthread
+ * \brief A thread object that ensures proper usage of system threads.
+ *
+ * This class is used to handle threads. It should NEVER be used, however,
+ * there are some very specific cases where a thread is necessary to make
+ * sure that main process doesn't get stuck. For example, the process
+ * environment using pipes requires threads to read and write pipes
+ * because otherwise the processes could lock up.
+ */
+
+
+/** \typedef cppthread::pointer_t
+ * \brief The shared pointer for a thread object.
+ *
+ * This type is used to hold a smart pointer to a thread.
+ *
+ * This smart pointer is safe. It can be used to hold a thread object and
+ * when it goes out of scope, it properly ends the corresponding thread
+ * runner (the cppthread::runner) and returns.
+ *
+ * Be cautious because the smart pointer of a runner is not actually
+ * safe to delete without first stopping the thread. Make sure to manage
+ * all your threads in with two objects, making sure that the thread goes
+ * out of scope first so it can stop your thread before your thread object
+ * gets destroyed.
+ */
+
+
+/** \typedef cppthread::vector_t
+ * \brief A vector of threads.
+ *
+ * This type defines a vector of threads. Since each entry in the vector
+ * is a smart pointer, it is safe to use this type.
+ */
+
+
+
+
+
 
 } // namespace snap
 // vim: ts=4 sw=4 et
