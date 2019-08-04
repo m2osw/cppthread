@@ -46,17 +46,17 @@ namespace cppthread
 class runner;
 
 
-class cppthread
+class thread
 {
 public:
-    typedef std::shared_ptr<cppthread>      pointer_t;
+    typedef std::shared_ptr<thread>      pointer_t;
     typedef std::vector<pointer_t>          vector_t;
 
-                                cppthread(std::string const & name, runner * runner);
-                                cppthread(cppthread const & rhs) = delete;
-                                ~cppthread();
+                                thread(std::string const & name, runner * runner);
+                                thread(thread const & rhs) = delete;
+                                ~thread();
 
-    cppthread &                 operator = (cppthread const & rhs) = delete;
+    thread &                    operator = (thread const & rhs) = delete;
 
     std::string const &         get_name() const;
     runner *                    get_runner() const;
@@ -67,10 +67,6 @@ public:
     bool                        kill(int sig);
     pid_t                       get_thread_tid() const;
     mutex &                     get_thread_mutex() const;
-
-    static int                  get_total_number_of_processors();
-    static int                  get_number_of_available_processors();
-    static pid_t                gettid();
 
 private:
     // internal function to start the runner
@@ -89,6 +85,10 @@ private:
     std::exception_ptr          f_exception = std::exception_ptr();
 };
 
+
+int                  get_total_number_of_processors();
+int                  get_number_of_available_processors();
+pid_t                gettid();
 
 
 } // namespace cppthread

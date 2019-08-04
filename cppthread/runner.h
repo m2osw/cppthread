@@ -44,7 +44,7 @@ namespace cppthread
 
 
 
-class cppthread;
+class thread;
 
 
 // this is the actual thread because we cannot use the main thread
@@ -66,16 +66,16 @@ public:
     virtual bool        is_ready() const;
     virtual bool        continue_running() const;
     virtual void        run() = 0;
-    cppthread *         get_thread() const;
+    thread *            get_thread() const;
     pid_t               gettid() const;
 
 protected:
     mutable mutex       f_mutex = mutex();
 
 private:
-    friend class cppthread;
+    friend class thread;
 
-    cppthread *         f_thread = nullptr;
+    thread *            f_thread = nullptr;
     std::string const   f_name = std::string();
 };
 

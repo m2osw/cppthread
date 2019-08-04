@@ -156,13 +156,13 @@ bool runner::continue_running() const
 
 /** \brief Retrieve the thread controller linked to this runner.
  *
- * Each runner is assigned a thread controller whenever the cppthread
- * is created (they get attached, in effect.) Once the cppthread is
+ * Each runner is assigned a thread controller whenever the thread
+ * is created (they get attached, in effect.) Once the thread is
  * destroyed, the pointer goes back to nullptr.
  *
- * \return A cppthread pointer or nullptr.
+ * \return A thread pointer or nullptr.
  */
-cppthread * runner::get_thread() const
+thread * runner::get_thread() const
 {
     return f_thread;
 }
@@ -189,13 +189,13 @@ pid_t runner::gettid() const
  * \brief The runner is the class that wraps the actual system thread.
  *
  * This class defines the actuall thread wrapper. This is very important
- * because when the main cppthread object gets destroyed and if it
+ * because when the main thread object gets destroyed and if it
  * were a system thread, the virtual tables would be destroyed and thus
- * invalid before you reached the ~cppthread() destructor. This means
+ * invalid before you reached the ~thread() destructor. This means
  * any of the virtual functions could not get called.
  *
  * For this reason we have a two level thread objects implementation:
- * the cppthread which acts as a controller and the snap_runner which
+ * the thread which acts as a controller and the snap_runner which
  * is the object that is the actual system thread and thus which has the
  * run() virtual function: the function that gets called when the thread
  * starts running.
@@ -209,8 +209,8 @@ pid_t runner::gettid() const
  *
  * Be very careful. Using a smart pointer does NOT mean that you can just
  * delete a snap_runner without first stopping the thread. Make sure to
- * have a cppthread object to manage your snap_running pointers (i.e you
- * can delete a cppthread, which will stop your snap_runner and then
+ * have a thread object to manage your snap_running pointers (i.e you
+ * can delete a thread, which will stop your snap_runner and then
  * delete the snap_runner.)
  */
 
@@ -219,14 +219,14 @@ pid_t runner::gettid() const
  * \brief A vector of threads.
  *
  * This type defines a vector of thread runners as used by the
- * cppthread::cppthread_pool template.
+ * cppthread::thread_pool template.
  *
  * Be careful as vectors are usually copyable and this one is because it
  * holds smart pointers to thread runners, not the actual thread. You
  * still only have one thread, just multiple instances of its pointer.
  * However, keep in mind that you can't just destroy a runner. The
  * thread it is runner must be stopped first. Please make sure to
- * have a cppthread or a cppthread::cppthread_pool to manage
+ * have a thread or a thread::pool to manage
  * your thread runners.
  */
 
@@ -240,7 +240,7 @@ pid_t runner::gettid() const
  *
  * If you want to share data and mutexes between multiple threads,
  * you may want to consider using another mutex. For example, the
- * cppthread::snap_fifo is itself derived from the mutex
+ * cppthread::fifo is itself derived from the mutex
  * class. So when you use a FIFO between multiple threads, the
  * lock/unlock mechanism is not using the mutex of your thread.
  */

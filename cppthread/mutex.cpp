@@ -672,7 +672,53 @@ void mutex::broadcast()
 }
 
 
+/** \brief The system mutex.
+ *
+ * This mutex is created and initialized whenever this library is
+ * loaded. This means it will always be ready for any library
+ * that depends on the cppthread library.
+ *
+ * It should be used for things that may happen at any time and
+ * require to be done by one thread at a time. For example, a
+ * class with a get_instance() may want to lock this mutex, do
+ * it's instance creation and then unlock the mutex.
+ *
+ * The mutex locking should be done using the guard class.
+ *
+ * \code
+ *     ptr * get_instance()
+ *     {
+ *         cppthread::guard lock(g_system_mutex);
+ *
+ *         ...proceed with the instance allocation...
+ *     }
+ * \endcode
+ *
+ * Because of the order in which things get initialized under
+ * Linux, you can be sure that this mutex will be ready for
+ * use as soon as the cppthread is loaded. So you can even
+ * use it in your own C++ initialization (i.e. your global
+ * objects.)
+ *
+ * Obviously, if you also have your own mutex, you need to
+ * initialize it and therefore you may have problems in
+ * your initialization process (i.e. your C++ globals may
+ * not get initialized in the correct order--the mutex may
+ * get initialized after your other parameters...)
+ */
+mutex *         g_system_mutex;
 
+class system_mutex
+{
+public:
+    system_mutex()
+    {
+        g_system_mutex = new mutex;
+    }
+};
+
+
+system_mutex    g_create_mutex;
 
 
 } // namespace snap

@@ -28,7 +28,7 @@
 #       Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-find_path( CPPTHREAD_INCLUDE_DIR cppthread/log.h
+find_path( CPPTHREAD_INCLUDE_DIR cppthread/thread.h
 		   PATHS $ENV{CPPTHREAD_INCLUDE_DIR}
 		 )
 find_library( CPPTHREAD_LIBRARY cppthread

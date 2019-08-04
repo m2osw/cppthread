@@ -67,8 +67,8 @@ namespace cppthread
  *
  * The runner pointer is an object which has a run() function that will
  * be called from another thread. That object becomes the "child" of
- * this cppthread controller. However, if it is already assigned a
- * thread controller, then the initialization of the cppthread fails.
+ * this thread \em controller. However, if it is already assigned a
+ * thread controller, then the initialization of the thread fails.
  * You may test whether a runner is already assigned a thread controller
  * by calling its get_thread() function and see that it is not nullptr.
  *
@@ -77,13 +77,13 @@ namespace cppthread
  * \param[in] name  The name of the process.
  * \param[in] runner  The runner (the actual thread) to handle.
  */
-cppthread::cppthread(std::string const & name, runner * runner)
+thread::thread(std::string const & name, runner * runner)
     : f_name(name)
     , f_runner(runner)
 {
     if(f_runner == nullptr)
     {
-        throw cppthread_exception_invalid_error("runner missing in cppthread() constructor");
+        throw cppthread_exception_invalid_error("runner missing in thread() constructor");
     }
     if(f_runner->f_thread != nullptr)
     {
@@ -124,7 +124,7 @@ cppthread::cppthread(std::string const & name, runner * runner)
  * The destructor also removes the thread from the runner so the runner
  * can create another thread controller and run again.
  */
-cppthread::~cppthread()
+thread::~thread()
 {
     try
     {
@@ -156,7 +156,7 @@ cppthread::~cppthread()
  *
  * \return The name of the process.
  */
-std::string const & cppthread::get_name() const
+std::string const & thread::get_name() const
 {
     return f_name;
 }
@@ -172,13 +172,13 @@ std::string const & cppthread::get_name() const
  * object type.
  *
  * \note
- * The cppthread constructor ensures that this pointer is never nullptr.
+ * The thread constructor ensures that this pointer is never nullptr.
  * Therefore this function never returns a null pointer. However, the
  * dynamic_cast<>() function may return a nullptr.
  *
- * \return The runner object attached to this cppthread.
+ * \return The runner object attached to this thread.
  */
-runner * cppthread::get_runner() const
+runner * thread::get_runner() const
 {
     return f_runner;
 }
@@ -200,7 +200,7 @@ runner * cppthread::get_runner() const
  *
  * \return true if the thread is still considered to be running.
  */
-bool cppthread::is_running() const
+bool thread::is_running() const
 {
     guard lock(f_mutex);
     return f_running;
@@ -216,7 +216,7 @@ bool cppthread::is_running() const
  *
  * \return true if the stop() function was called, false otherwise.
  */
-bool cppthread::is_stopping() const
+bool thread::is_stopping() const
 {
     guard lock(f_mutex);
     return f_stopping;
@@ -231,7 +231,7 @@ bool cppthread::is_stopping() const
  * The function then calls the internal_run().
  *
  * \note
- * The function parameter is a void * instead of cppthread because that
+ * The function parameter is a void * instead of thread because that
  * way the function signature matches the signature the pthread_create()
  * function expects.
  *
@@ -240,9 +240,9 @@ bool cppthread::is_stopping() const
  * \return We return a null pointer, which we do not use because we do
  *         not call the pthread_join() function.
  */
-void * func_internal_start(void * thread)
+void * func_internal_start(void * system_thread)
 {
-    cppthread * t(reinterpret_cast<cppthread *>(thread));
+    thread * t(reinterpret_cast<thread *>(system_thread));
     t->internal_run();
     return nullptr; // == pthread_exit(nullptr);
 }
@@ -251,7 +251,7 @@ void * func_internal_start(void * thread)
 /** \brief Run the thread process.
  *
  * This function is called by the func_internal_start() so we run from
- * within the cppthread class. (i.e. the func_internal_start() function
+ * within the thread class. (i.e. the func_internal_start() function
  * itself is static.)
  *
  * The function marks the thread as started which allows the parent start()
@@ -265,7 +265,7 @@ void * func_internal_start(void * thread)
  * process (if a thread creates another thread, then it can be propagated
  * multiple times between all the threads up to the main process.)
  */
-void cppthread::internal_run()
+void thread::internal_run()
 {
     {
         guard lock(f_mutex);
@@ -331,7 +331,7 @@ void cppthread::internal_run()
  *
  * \return true if the thread successfully started, false otherwise.
  */
-bool cppthread::start()
+bool thread::start()
 {
     guard lock(f_mutex);
 
@@ -391,7 +391,7 @@ bool cppthread::start()
  * This function throws the thread exceptions that weren't caught in your
  * run() function. This happens after the thread has completed.
  */
-void cppthread::stop()
+void thread::stop()
 {
     {
         guard lock(f_mutex);
@@ -451,7 +451,7 @@ void cppthread::stop()
  *
  * \return The thread identifier (tid) or -1 if the thread is not running.
  */
-pid_t cppthread::get_thread_tid() const
+pid_t thread::get_thread_tid() const
 {
     guard lock(f_mutex);
     return f_tid;
@@ -465,7 +465,7 @@ pid_t cppthread::get_thread_tid() const
  *
  * \return This thread's mutex.
  */
-mutex & cppthread::get_thread_mutex() const
+mutex & thread::get_thread_mutex() const
 {
     return f_mutex;
 }
@@ -490,7 +490,7 @@ mutex & cppthread::get_thread_mutex() const
  * \return true if the signal was sent, false if the signal could not
  *         be sent (i.e. the thread was already terminated...)
  */
-bool cppthread::kill(int sig)
+bool thread::kill(int sig)
 {
     guard lock(f_mutex);
     if(f_running)
@@ -503,6 +503,12 @@ bool cppthread::kill(int sig)
 
     return false;
 }
+
+
+
+
+
+
 
 
 /** \brief Retrieve the number of processors available on this system.
@@ -519,7 +525,7 @@ bool cppthread::kill(int sig)
  *
  * \sa get_number_of_available_processors()
  */
-int cppthread::get_total_number_of_processors()
+int get_total_number_of_processors()
 {
     return get_nprocs_conf();
 }
@@ -571,7 +577,7 @@ int cppthread::get_total_number_of_processors()
  *
  * \sa get_total_number_of_processors()
  */
-int cppthread::get_number_of_available_processors()
+int get_number_of_available_processors()
 {
     return get_nprocs();
 }
@@ -587,7 +593,7 @@ int cppthread::get_number_of_available_processors()
  *
  * \return The thread identifier.
  */
-pid_t cppthread::gettid()
+pid_t gettid()
 {
     return static_cast<pid_t>(syscall(SYS_gettid));
 }
@@ -624,7 +630,7 @@ pid_t cppthread::gettid()
 
 
 
-/** \class cppthread
+/** \class thread
  * \brief A thread object that ensures proper usage of system threads.
  *
  * This class is used to handle threads. It should NEVER be used, however,
@@ -635,14 +641,14 @@ pid_t cppthread::gettid()
  */
 
 
-/** \typedef cppthread::pointer_t
+/** \typedef thread::pointer_t
  * \brief The shared pointer for a thread object.
  *
  * This type is used to hold a smart pointer to a thread.
  *
  * This smart pointer is safe. It can be used to hold a thread object and
  * when it goes out of scope, it properly ends the corresponding thread
- * runner (the cppthread::runner) and returns.
+ * runner (the runner) and returns.
  *
  * Be cautious because the smart pointer of a runner is not actually
  * safe to delete without first stopping the thread. Make sure to manage
@@ -652,7 +658,7 @@ pid_t cppthread::gettid()
  */
 
 
-/** \typedef cppthread::vector_t
+/** \typedef thread::vector_t
  * \brief A vector of threads.
  *
  * This type defines a vector of threads. Since each entry in the vector

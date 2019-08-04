@@ -33,20 +33,20 @@ namespace cppthread
 {
 
 
-class cppthread;
+class thread;
 
 
 class life
 {
 public:
-                        life(cppthread * const thread);
+                        life(thread * const thread);
                         life(life const & rhs) = delete;
                         ~life();
 
     life &              operator = (life const & rhs) = delete;
 
 private:
-    cppthread *         f_thread = nullptr;
+    thread *            f_thread = nullptr;
 };
 
 

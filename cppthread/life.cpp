@@ -59,19 +59,19 @@ namespace cppthread
  * waiting for the thread to be done.
  *
  * \note
- * If possible, you should consider using the cppthread::pointer_t
- * instead of the cppthread_life which expects a bare pointer.
+ * If possible, you should consider using the thread::pointer_t
+ * instead of the life which expects a bare pointer.
  * There are situations, though, where this class is practical
  * because you have a thread as a variable member in a class.
  *
  * \param[in] thread  The thread which life is to be controlled.
  */
-life::life(cppthread * const thread)
+life::life(thread * const thread)
     : f_thread(thread)
 {
     if(f_thread == nullptr)
     {
-        throw cppthread_logic_error("cppthread_life pointer is nullptr");
+        throw cppthread_logic_error("life pointer is nullptr");
     }
     if(!f_thread->start())
     {
@@ -93,13 +93,13 @@ life::life(cppthread * const thread)
 life::~life()
 {
     //advgetopt::log << log_level_t::debug
-    //               << "stopping cppthread_life..."
+    //               << "stopping life..."
     //               << end;
 
     f_thread->stop();
 
     //advgetopt::log << log_level_t::debug
-    //               << "cppthread_life stopped!"
+    //               << "life stopped!"
     //               << end;
 }
 
@@ -109,8 +109,8 @@ life::~life()
  * \brief An RAII class managing the lifetime of a thread.
  *
  * This class is used to manage the life of a thread: the time it runs.
- * The constructor calls the cppthread::start() function and
- * the destructor makes sure to call the cppthread::stop() function.
+ * The constructor calls the thread::start() function and
+ * the destructor makes sure to call the thread::stop() function.
  *
  * If you have a specific block or another class that should run a
  * thread for the lifetime of the block or class object, then this
@@ -129,8 +129,8 @@ life::~life()
  * object is initialized, the pointer is never nullptr (we
  * throw before in the constructor if that is the case.)
  *
- * The user of the cppthread_life class must view the
- * thread pointer as owned by the cppthread_life object
+ * The user of the life class must view the
+ * thread pointer as owned by the life object
  * (similar to a smart pointer.)
  */
 

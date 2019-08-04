@@ -67,7 +67,7 @@ private:
                      , in
                      , out
                      , args...)
-            , f_thread(std::make_shared<cppthread>(name, &f_worker))
+            , f_thread(std::make_shared<thread>(name, &f_worker))
         {
             f_thread->start();
         }
@@ -84,7 +84,7 @@ private:
 
     private:
         W                       f_worker;   // runner before thread; this is safe
-        cppthread::pointer_t    f_thread;
+        thread::pointer_t       f_thread;
     };
 
 
@@ -132,7 +132,7 @@ public:
     {
         if(static_cast<size_t>(i) >= f_workers.size())
         {
-            throw std::range_error("snap::cppthread::cppthread_pool::get_worker() called with an index out of bounds.");
+            throw std::range_error("snap::thread::pool::get_worker() called with an index out of bounds.");
         }
         return f_workers[i]->get_worker();
     }
@@ -141,7 +141,7 @@ public:
     {
         if(static_cast<size_t>(i) >= f_workers.size())
         {
-            throw std::range_error("snap::cppthread::cppthread_pool::get_worker() called with an index out of bounds.");
+            throw std::range_error("snap::thread::pool::get_worker() called with an index out of bounds.");
         }
         return f_workers[i]->get_worker();
     }
