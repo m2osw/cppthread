@@ -13,6 +13,22 @@ It includes support for communication between threads, a thread pool,
 mutexes, etc.
 
 
+# Features
+
+The library supports a thread controller and a runner by default. This
+allows for a lot of safety that threads do not otherwise offer in C++
+(i.e. it is too late to try to destroy a thread once you are in the
+destructor because many of the virtual functions are going to be wrong
+by then.)
+
+* Thread Controller (`thread`)
+* Runner, the actual thread (`runner`)
+* Pool workers (`pool`, `worker`)
+* Guard variables (`mutex`, `guard`)
+* Control thread lifetime (`life`)
+* Inter thread communication (`fifo`)
+
+
 # License
 
 The project is covered by the GPL 2.0 license.
