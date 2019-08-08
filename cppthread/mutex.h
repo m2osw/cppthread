@@ -32,6 +32,7 @@
 // C++ lib
 //
 #include <memory>
+#include <vector>
 
 
 
@@ -52,6 +53,8 @@ class mutex
 {
 public:
     typedef std::shared_ptr<mutex>     pointer_t;
+    typedef std::vector<pointer_t>     vector_t;
+    typedef std::vector<mutex>         direct_vector_t;
 
                         mutex();
                         ~mutex();
