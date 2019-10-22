@@ -1,4 +1,3 @@
-// Snap Websites Server -- C++ object to handle threads
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -27,15 +26,15 @@
 
 // self
 //
-#include "cppthread/life.h"
+#include    "cppthread/life.h"
 
-#include "cppthread/exception.h"
-#include "cppthread/thread.h"
+#include    "cppthread/exception.h"
+#include    "cppthread/thread.h"
 
 
 // last include
 //
-#include "snapdev/poison.h"
+#include    "snapdev/poison.h"
 
 
 
@@ -78,7 +77,7 @@ life::life(thread * const thread)
         // we cannot really just generate an error if the thread
         // does not start because we do not offer a way for the
         // user to know so we have to throw for now
-        throw cppthread_exception_not_started("somehow the thread was not started, an error should have been logged");
+        throw cppthread_not_started("somehow the thread was not started, an error should have been logged");
     }
 }
 
@@ -92,15 +91,15 @@ life::life(thread * const thread)
  */
 life::~life()
 {
-    //advgetopt::log << log_level_t::debug
-    //               << "stopping life..."
-    //               << end;
+    //log << log_level_t::debug
+    //    << "stopping life..."
+    //    << end;
 
     f_thread->stop();
 
-    //advgetopt::log << log_level_t::debug
-    //               << "life stopped!"
-    //               << end;
+    //log << log_level_t::debug
+    //    << "life stopped!"
+    //    << end;
 }
 
 
@@ -137,5 +136,5 @@ life::~life()
 
 
 
-} // namespace snap
+} // namespace cppthread
 // vim: ts=4 sw=4 et

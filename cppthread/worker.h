@@ -1,4 +1,3 @@
-// Snap Websites Server -- advanced handling of Unix thread
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -18,14 +17,9 @@
 #pragma once
 
 /** \file
- * \brief Thread Runner and Managers.
+ * \brief Thread Runner Worker.
  *
- * This file includes the declaration and implementation (For templates)
- * of classes used to manage threads the easy way. Especially, our
- * implementation is aware of object destructors so a thread manager
- * (snap_thread) can be destroyed. It will automatically and properly
- * wait for its runner (the actual system pthread) to exit before
- * finishing up its and its runner clean up.
+ * This file includes the declaration and implementation of the worker.
  */
 
 // self

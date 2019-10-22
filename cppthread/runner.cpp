@@ -1,4 +1,3 @@
-// Snap Websites Server -- C++ object to handle threads
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -25,20 +24,16 @@
 
 // self
 //
-#include "cppthread/runner.h"
+#include    "cppthread/runner.h"
 
-#include "cppthread/guard.h"
-#include "cppthread/thread.h"
-
-
-// advgetopt lib
-//
-#include "advgetopt/log.h"
+#include    "cppthread/guard.h"
+#include    "cppthread/log.h"
+#include    "cppthread/thread.h"
 
 
 // last include
 //
-#include "snapdev/poison.h"
+#include    <snapdev/poison.h>
 
 
 
@@ -76,11 +71,11 @@ runner::~runner()
         // this is a bug; it could be that the object that derived from
         // the snap_runner calls gets destroyed under the thread controller's
         // nose and that could break a lot of things.
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "The Snap! thread runner named \""
-                       << f_name
-                       << "\" is still marked as running when its object is being destroyed."
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "The Snap! thread runner named \""
+            << f_name
+            << "\" is still marked as running when its object is being destroyed."
+            << end;
         std::terminate();
     }
 }
@@ -280,5 +275,5 @@ pid_t runner::gettid() const
  */
 
 
-} // namespace snap
+} // namespace cppthread
 // vim: ts=4 sw=4 et

@@ -1,4 +1,3 @@
-// Snap Websites Server -- C++ object to handle threads
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -25,26 +24,22 @@
 
 // self
 //
-#include "cppthread/mutex.h"
+#include    "cppthread/mutex.h"
 
-#include "cppthread/exception.h"
-#include "cppthread/guard.h"
-
-
-// advgetopt lib
-//
-#include "advgetopt/log.h"
+#include    "cppthread/exception.h"
+#include    "cppthread/guard.h"
+#include    "cppthread/log.h"
 
 
 // C lib
 //
-#include <string.h>
-#include <sys/time.h>
+#include    <string.h>
+#include    <sys/time.h>
 
 
 // last include
 //
-#include "snapdev/poison.h"
+#include    <snapdev/poison.h>
 
 
 
@@ -169,41 +164,41 @@ mutex::mutex()
     int err(pthread_mutexattr_init(&mattr));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex attribute structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_muteattr_init() failed");
+        log << log_level_t::fatal
+            << "a mutex attribute structure could not be initialized, error #"
+            << err
+            << end;
+        throw cppthread_invalid_error("pthread_muteattr_init() failed");
     }
     err = pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex attribute structure type could not be setup, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex attribute structure type could not be setup, error #"
+            << err
+            << end;
         pthread_mutexattr_destroy(&mattr);
-        throw cppthread_exception_invalid_error("pthread_muteattr_settype() failed");
+        throw cppthread_invalid_error("pthread_muteattr_settype() failed");
     }
     err = pthread_mutex_init(&f_impl->f_mutex, &mattr);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex structure could not be initialized, error #"
+            << err
+            << end;
         pthread_mutexattr_destroy(&mattr);
-        throw cppthread_exception_invalid_error("pthread_mutex_init() failed");
+        throw cppthread_invalid_error("pthread_mutex_init() failed");
     }
     err = pthread_mutexattr_destroy(&mattr);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex attribute structure could not be destroyed, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex attribute structure could not be destroyed, error #"
+            << err
+            << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_exception_invalid_error("pthread_mutexattr_destroy() failed");
+        throw cppthread_invalid_error("pthread_mutexattr_destroy() failed");
     }
 
     // initialize the condition
@@ -211,33 +206,33 @@ mutex::mutex()
     err = pthread_condattr_init(&cattr);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition attribute structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex condition attribute structure could not be initialized, error #"
+            << err
+            << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_exception_invalid_error("pthread_condattr_init() failed");
+        throw cppthread_invalid_error("pthread_condattr_init() failed");
     }
     err = pthread_cond_init(&f_impl->f_condition, &cattr);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition structure could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex condition structure could not be initialized, error #"
+            << err
+            << end;
         pthread_condattr_destroy(&cattr);
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_exception_invalid_error("pthread_cond_init() failed");
+        throw cppthread_invalid_error("pthread_cond_init() failed");
     }
     err = pthread_condattr_destroy(&cattr);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition attribute structure could not be destroyed, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex condition attribute structure could not be destroyed, error #"
+            << err
+            << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_exception_invalid_error("pthread_condattr_destroy() failed");
+        throw cppthread_invalid_error("pthread_condattr_destroy() failed");
     }
 }
 
@@ -262,28 +257,28 @@ mutex::~mutex()
     {
         // we cannot legally throw in a destructor so we instead generate a fatal error
         //
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex is being destroyed when its reference count is "
-                       << f_reference_count
-                       << " instead of zero."
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex is being destroyed when its reference count is "
+            << f_reference_count
+            << " instead of zero."
+            << end;
         std::terminate();
     }
     int err(pthread_cond_destroy(&f_impl->f_condition));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "a mutex condition destruction generated error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::error
+            << "a mutex condition destruction generated error #"
+            << err
+            << end;
     }
     err = pthread_mutex_destroy(&f_impl->f_mutex);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex destruction generated error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "a mutex destruction generated error #"
+            << err
+            << end;
     }
 }
 
@@ -306,13 +301,13 @@ void mutex::lock()
     int const err(pthread_mutex_lock(&f_impl->f_mutex));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "a mutex lock generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_mutex_lock() failed");
+        log << log_level_t::error
+            << "a mutex lock generated error #"
+            << err
+            << " -- "
+            << strerror(err)
+            << end;
+        throw cppthread_invalid_error("pthread_mutex_lock() failed");
     }
 
     // note: we do not need an atomic call since we
@@ -350,13 +345,13 @@ bool mutex::try_lock()
     }
 
     // another type of failure
-    advgetopt::log << advgetopt::log_level_t::error
-                   << "a mutex try lock generated error #"
-                   << err
-                   << " -- "
-                   << strerror(err)
-                   << advgetopt::end;
-    throw cppthread_exception_invalid_error("pthread_mutex_trylock() failed");
+    log << log_level_t::error
+        << "a mutex try lock generated error #"
+        << err
+        << " -- "
+        << strerror(err)
+        << end;
+    throw cppthread_invalid_error("pthread_mutex_trylock() failed");
 }
 
 
@@ -380,12 +375,12 @@ void mutex::unlock()
     // We can't unlock if it wasn't locked before!
     if(f_reference_count <= 0UL)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "attempting to unlock a mutex when it is still locked "
-                       << f_reference_count
-                       << " times"
-                       << advgetopt::end;
-        throw cppthread_exception_not_locked_error("unlock was called too many times");
+        log << log_level_t::fatal
+            << "attempting to unlock a mutex when it is still locked "
+            << f_reference_count
+            << " times"
+            << end;
+        throw cppthread_not_locked_error("unlock was called too many times");
     }
 
     // NOTE: we do not need an atomic call since we
@@ -395,13 +390,13 @@ void mutex::unlock()
     int const err(pthread_mutex_unlock(&f_impl->f_mutex));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex unlock generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_mutex_unlock() failed");
+        log << log_level_t::fatal
+            << "a mutex unlock generated error #"
+            << err
+            << " -- "
+            << strerror(err)
+            << end;
+        throw cppthread_invalid_error("pthread_mutex_unlock() failed");
     }
 }
 
@@ -437,23 +432,23 @@ void mutex::wait()
     //       has to be at least once.
     //if(f_reference_count != 1UL)
     //{
-    //    advgetopt::log << advgetopt::log_level_t::fatal
-    //                   << "attempting to wait on a mutex when it is not locked exactly once, current count is "
-    //                   << f_reference_count
-    //                   << advgetopt::end;
+    //    log << log_level_t::fatal
+    //        << "attempting to wait on a mutex when it is not locked exactly once, current count is "
+    //        << f_reference_count
+    //        << end;
     //    throw cppthread_exception_not_locked_once_error();
     //}
     int const err(pthread_cond_wait(&f_impl->f_condition, &f_impl->f_mutex));
     if(err != 0)
     {
         // an error occurred!
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex conditional wait generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_mutex_failed_error("pthread_cond_wait() failed");
+        log << log_level_t::fatal
+            << "a mutex conditional wait generated error #"
+            << err
+            << " -- "
+            << strerror(err)
+            << end;
+        throw cppthread_mutex_failed_error("pthread_cond_wait() failed");
     }
 }
 
@@ -492,12 +487,12 @@ bool mutex::timed_wait(uint64_t const usecs)
     //       has to be at least once.
     //if(f_reference_count != 1UL)
     //{
-    //  advgetopt::log << advgetopt::log_level_t::fatal
-    //                 << "attempting to timed wait "
-    //                 << usec
-    //                 << " usec on a mutex when it is not locked exactly once, current count is "
-    //                 << f_reference_count
-    //                 << advgetopt::end;
+    //  log << log_level_t::fatal
+    //         << "attempting to timed wait "
+    //         << usec
+    //         << " usec on a mutex when it is not locked exactly once, current count is "
+    //         << f_reference_count
+    //         << end;
     //    throw cppthread_exception_not_locked_once_error();
     //}
 
@@ -508,13 +503,13 @@ bool mutex::timed_wait(uint64_t const usecs)
     if(gettimeofday(&vtime, nullptr) != 0)
     {
         err = errno;
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "gettimeofday() failed with errno: "
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_system_error("gettimeofday() failed");
+        log << log_level_t::fatal
+            << "gettimeofday() failed with errno: "
+            << err
+            << " -- "
+            << strerror(err)
+            << end;
+        throw cppthread_system_error("gettimeofday() failed");
     }
 
     // now + user specified usec
@@ -537,13 +532,13 @@ bool mutex::timed_wait(uint64_t const usecs)
         }
 
         // an error occurred!
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex conditional timed wait generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
+        log << log_level_t::fatal
+            << "a mutex conditional timed wait generated error #"
+            << err
+            << " -- "
+            << strerror(err)
+            << end;
+        throw cppthread_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -578,12 +573,12 @@ bool mutex::dated_wait(uint64_t usec)
     //       has to be at least once.
     //if(f_reference_count != 1UL)
     //{
-    //    advgetopt::log << advgetopt::log_level_t::fatal
-    //                   << "attempting to dated wait until "
-    //                   << usec
-    //                   << " msec on a mutex when it is not locked exactly once, current count is "
-    //                   << f_reference_count
-    //                   << advgetopt::end;
+    //    log << log_level_t::fatal
+    //        << "attempting to dated wait until "
+    //        << usec
+    //        << " msec on a mutex when it is not locked exactly once, current count is "
+    //        << f_reference_count
+    //        << end;
     //    throw cppthread_exception_not_locked_once_error();
     //}
 
@@ -601,13 +596,13 @@ bool mutex::dated_wait(uint64_t usec)
         }
 
         // an error occurred!
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "a mutex conditional dated wait generated error #"
-                       << err
-                       << " -- "
-                       << strerror(err)
-                       << advgetopt::end;
-        throw cppthread_exception_mutex_failed_error("pthread_cond_timedwait() failed");
+        log << log_level_t::error
+            << "a mutex conditional dated wait generated error #"
+            << err
+            << " -- "
+            << strerror(err)
+            << end;
+        throw cppthread_mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -633,11 +628,11 @@ void mutex::signal()
     int const err(pthread_cond_signal(&f_impl->f_condition));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex condition signal generated error #"
-                       << err
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_cond_signal() failed");
+        log << log_level_t::fatal
+            << "a mutex condition signal generated error #"
+            << err
+            << end;
+        throw cppthread_invalid_error("pthread_cond_signal() failed");
     }
 }
 
@@ -663,11 +658,11 @@ void mutex::broadcast()
     int const err(pthread_cond_broadcast(&f_impl->f_condition));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "a mutex signal broadcast generated error #"
-                       << err
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_cond_broadcast() failed");
+        log << log_level_t::fatal
+            << "a mutex signal broadcast generated error #"
+            << err
+            << end;
+        throw cppthread_invalid_error("pthread_cond_broadcast() failed");
     }
 }
 
@@ -688,9 +683,9 @@ void mutex::broadcast()
  * \code
  *     ptr * get_instance()
  *     {
- *         cppthread::guard lock(g_system_mutex);
+ *         cppthread::guard lock(*g_system_mutex);
  *
- *         ...proceed with the instance allocation...
+ *         ...proceed with your instance allocation...
  *     }
  * \endcode
  *
@@ -706,20 +701,14 @@ void mutex::broadcast()
  * not get initialized in the correct order--the mutex may
  * get initialized after your other parameters...)
  */
-mutex *         g_system_mutex;
+mutex *         g_system_mutex = nullptr;
 
-class system_mutex
+void create_system_mutex()
 {
-public:
-    system_mutex()
-    {
-        g_system_mutex = new mutex;
-    }
-};
+    g_system_mutex = new mutex;
+}
 
 
-system_mutex    g_create_mutex;
 
-
-} // namespace snap
+} // namespace cppthread
 // vim: ts=4 sw=4 et

@@ -1,4 +1,3 @@
-// Snap Websites Server -- C++ object to handle threads
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -260,5 +259,5 @@ namespace cppthread
 
 
 
-} // namespace snap
+} // namespace cppthread
 // vim: ts=4 sw=4 et

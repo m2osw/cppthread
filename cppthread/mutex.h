@@ -1,4 +1,3 @@
-// Snap Websites Server -- advanced handling of Unix thread
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -31,8 +30,8 @@
 
 // C++ lib
 //
-#include <memory>
-#include <vector>
+#include    <memory>
+#include    <vector>
 
 
 

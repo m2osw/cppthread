@@ -1,0 +1,483 @@
+// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// https://snapwebsites.org/project/cppthread
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+/** \file
+ * \brief Implementation of the logging facility.
+ *
+ * The library is very often used by daemons meaning that it will be running
+ * on its own in the background. For this reason, all the output is done
+ * through the log facility.
+ *
+ * This interface defines a function which you are expected to call to setup
+ * a callback. By default, the callback is set to a function that simply
+ * prints errors to std::cerr.
+ *
+ * \note
+ * Note that the log facility is used only in extreme cases. It was made
+ * fully thread safe, however, that implementation is considered slow.
+ * Especially, if two different threads attempt to log a message
+ * simultaneously, only one of them will be allowed to build their
+ * message and the other one will be blocked for the entire time. Our
+ * snaplogger, on the other hand, allows any number of threads to build
+ * errors in parallel, only the processing at the end, which can be done
+ * asynchronously requires serialization.
+ */
+
+// self
+//
+#include    "cppthread/log.h"
+
+#include    "cppthread/exception.h"
+
+
+// C++ lib
+//
+#include    <iostream>
+
+
+// last include
+//
+#include    <snapdev/poison.h>
+
+
+
+namespace cppthread
+{
+
+
+/** \brief Function used to initialize the system mutex.
+ *
+ * This is unfortunate, but the system mutex create relies on the log
+ * object to exist and be properly initialized before it gets created.
+ * So we call this function from the constructor of the logger.
+ *
+ * \note
+ * This means it's not exact _properly initialized_ since the constructor
+ * did not yet return. However, it is guaranteed to work properly since
+ * we do not allow derivations or virtual tables.
+ */
+extern void create_system_mutex();
+
+
+/** \brief The logger object used to send logs out.
+ *
+ * This object is used to send data to the logger.
+ *
+ * \note
+ * This works because this library does not create a thread on
+ * initialization and therefore there is no reason for this
+ * library to initiate a logger call. At least, at this time,
+ * this is true and I'm not too sure what could generate such
+ * a problem.
+ */
+logger      log;
+
+
+namespace
+{
+
+
+/** \brief The log callback function.
+ *
+ * If define (not nullptr), this callback gets called whenever a log
+ * message is generated.
+ *
+ * You are expected to log the message to a file, send over a network,
+ * etc. The default (when the pointer is nullptr) is to send the
+ * message to std::cerr.
+ */
+log_callback        g_log_callback = nullptr;
+
+
+/** \brief The mutex used to ensure proper synchronization.
+ *
+ * The g_log_mutex variable is used to lock the cppthread logger so
+ * functions that need to run in a single thread at a time can run
+ * properly.
+ */
+pthread_mutex_t     g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
+/** \brief Whether the lock is currently active.
+ *
+ * This variable holds true or false. When false, no other thread holds
+ * the lock so we are the only one logging data. Once true, we are the
+ * one holding the lock if we pass through.
+ */
+bool                g_log_locked = false;
+
+
+/** \brief Whether the g_log_recursive_mutex was initialized.
+ *
+ * Whenever a log message is to be sent, we need a recursive lock
+ * to make sure that we can properly lock one or the other thread.
+ *
+ * This flag tells us whether we still have to initialize the
+ * g_log_recursive_mutex variable.
+ */
+bool                g_log_recursive_initialized = false;
+
+
+/** \brief We need a recursive lock and can't know whether the default is.
+ *
+ * In order to implement our lock() properly we need a recursive lock.
+ * This variable is used for this purpose. The g_log_mutex is first
+ * used to make sure we initialized this recursive lock. Since there
+ * is nothing that tells us whether a mutex was initialized we also
+ * need a flag: g_log_recursive_initialized.
+ *
+ * \warning
+ * We do not use the cppthread mutex class because it calls us, so we
+ * could otherwise end up in an infinite loop.
+ */
+pthread_mutex_t     g_log_recursive_mutex;
+
+
+} // no name namespace
+
+
+
+/** \brief Set a callback function.
+ *
+ * Set a callback function used to redirect the logs generated by the
+ * cppthread library and any library that makes use of this log
+ * facility (i.e. the advgetopt project does so).
+ *
+ * \note
+ * You should not use this facility unless you do not have access to
+ * the snaplogger, somehow. The snaplogger is a much more advanced
+ * and better interface especially in a multithreaded application.
+ *
+ * \param[in] callback  The function to call whenever a log is generated.
+ */
+void set_log_callback(log_callback callback)
+{
+    pthread_mutex_lock(&g_log_mutex);
+    g_log_callback = callback;
+    pthread_mutex_unlock(&g_log_mutex);
+}
+
+
+/** \brief Initialize the logger.
+ *
+ * The logger makes sure that the system mutex gets allocated. This
+ * way if an error occurs in that initialization process, it will
+ * happen after the logger gets initialized. Although it can happen
+ * before the logger initialization returns, the object initialization
+ * is already complete when we reach the call to the
+ * create_system_mutex() function.
+ */
+logger::logger()
+{
+    try
+    {
+        create_system_mutex();
+    }
+    catch(...)
+    {
+        std::cerr << "fatal: could not create system mutex."
+                  << std::endl;
+        std::terminate();
+    }
+}
+
+
+/** \brief Lock the system so a log can be emitted properly.
+ *
+ * This function allows the locking of the logger. This ensures that
+ * we can use a simple object even in a multithread environment. The
+ * only potential problem now is a deadlock.
+ *
+ * Note that you may call the lock() function any number of times. It
+ * will not count the number of calls. It locks only once. If already
+ * locked, it is like a passthrough. If another thread already acquired
+ * the lock, then the function blocks until the other thread is done
+ * with the logger.
+ */
+void logger::lock()
+{
+    int err(pthread_mutex_lock(&g_log_mutex));
+    if(err != 0)
+    {
+        std::cerr << "fatal: a mutex lock generated error #"
+                  << err
+                  << std::endl;
+        pthread_mutex_unlock(&g_log_mutex);
+        std::terminate();
+    }
+
+    if(!g_log_recursive_initialized)
+    {
+        g_log_recursive_initialized = true;
+
+        pthread_mutexattr_t mattr;
+        err = pthread_mutexattr_init(&mattr);
+        if(err != 0)
+        {
+            std::cerr << "fatal: a mutex attribute structure could not be initialized, error #"
+                      << err
+                      << std::endl;
+            pthread_mutex_unlock(&g_log_mutex);
+            std::terminate();
+        }
+        err = pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
+        if(err != 0)
+        {
+            std::cerr << "fatal: a mutex attribute structure type could not be setup, error #"
+                      << err
+                      << std::endl;
+            pthread_mutex_unlock(&g_log_mutex);
+            std::terminate();
+        }
+        err = pthread_mutex_init(&g_log_recursive_mutex, &mattr);
+        if(err != 0)
+        {
+            std::cerr << "fatal: a mutex structure could not be initialized, error #"
+                      << err
+                      << std::endl;
+            pthread_mutex_unlock(&g_log_mutex);
+            std::terminate();
+        }
+        err = pthread_mutexattr_destroy(&mattr);
+        if(err != 0)
+        {
+            std::cerr << "fatal: a mutex attribute structure could not be destroyed, error #"
+                      << err
+                      << std::endl;
+            pthread_mutex_unlock(&g_log_mutex);
+            std::terminate();
+        }
+    }
+    err = pthread_mutex_unlock(&g_log_mutex);
+    if(err != 0)
+    {
+        std::cerr << "fatal: a mutex unlock generated error #"
+                  << err
+                  << std::endl;
+        pthread_mutex_unlock(&g_log_mutex);
+        std::terminate();
+    }
+
+    // we have to lock only once so we use a flag to know whether we're
+    // already locked, if so, we unlock immediately (but we stil have
+    // one lock in place)
+    //
+    err = pthread_mutex_lock(&g_log_recursive_mutex);
+    if(err != 0)
+    {
+        std::cerr << "fatal: a mutex lock generated error #"
+                  << err
+                  << std::endl;
+        pthread_mutex_unlock(&g_log_mutex);
+        std::terminate();
+    }
+
+    if(g_log_locked)
+    {
+        err = pthread_mutex_unlock(&g_log_recursive_mutex);
+        if(err != 0)
+        {
+            std::cerr << "fatal: a mutex unlock generated error #"
+                      << err
+                      << std::endl;
+            pthread_mutex_unlock(&g_log_mutex);
+            std::terminate();
+        }
+    }
+    else
+    {
+        g_log_locked = true;
+    }
+}
+
+
+/** \brief Unlock the logger once we are done with it.
+ *
+ * Whenever the end() function gets called, the logger reacts by sending
+ * that message to the used defined callback or to std::cerr.
+ *
+ * Note that the number of calls to the lock are not limited. However,
+ * the unlock() function is called only once in the end() function.
+ * Attempting to unlock the logger more than once is a bug and undefined
+ * behavior may ensue. The class tries to emit an error when that happens,
+ * but it is unlikely to catch the error each time.
+ */
+void logger::unlock()
+{
+    if(!g_log_locked)
+    {
+        std::cerr << "fatal: logger::unlock() called with g_log_locked == false"
+                  << std::endl;
+        std::terminate();
+    }
+
+    g_log_locked = false;
+
+    int err(pthread_mutex_unlock(&g_log_mutex));
+    if(err != 0)
+    {
+        std::cerr << "fatal: a mutex unlock generated error #"
+                  << err
+                  << std::endl;
+        pthread_mutex_unlock(&g_log_mutex);
+        std::terminate();
+    }
+}
+
+
+/** \brief Save the level at which to log this message.
+ *
+ * This function gets called whenever you apply a level. This is expected
+ * as the very first parameter of the log. It may be used to shortcut
+ * the addition of other message data to avoid wasting time.
+ *
+ * The supported levels are defined in the log_level_t enumeration:
+ *
+ * * log_level_t::debug
+ * * log_level_t::info
+ * * log_level_t::warning
+ * * log_level_t::error
+ * * log_level_t::fatal
+ *
+ * Note that the fatal error level has no specific effect. It just
+ * displays a level of "fatal". If you want to stop the software,
+ * you are in charge of calling std::terminate() or exit().
+ *
+ * \note
+ * The snaplogger has a special handler you can setup to capture fatal
+ * errors which allows you to exit your software when such an error
+ * occurs. It uses an exception for the purpose.
+ *
+ * \param[in] level  The level this message represents.
+ *
+ * \return A reference to this logger.
+ */
+logger & logger::operator << (log_level_t const & level)
+{
+    lock();
+    f_level = level;
+    return *this;
+}
+
+
+/** \brief Execute a function.
+ *
+ * This call accepts a special value representing a logger function which
+ * gets called with the logger as a reference parameter.
+ *
+ * This is currently used by the end() function.
+ *
+ * \param[in] func  The function to call with this logger as parameter.
+ *
+ * \return A reference to this logger.
+ */
+logger & logger::operator << (logger & (*func)(logger &))
+{
+    lock();
+    func(*this);
+    return *this;
+}
+
+
+/** \brief End the logger's message.
+ *
+ * This function is called whenever you apply the end() function to
+ * the logger. It processes the message and sends it to the log
+ * callback function or prints it to std::cerr.
+ *
+ * \note
+ * If not callback was setup, the function throws away any debug
+ * messages and prints out the other messages to std::cerr.
+ *
+ * \note
+ * The log system has a lock in place whenever you start sending log
+ * data. This function unlocks the logger before returning. It is
+ * also exception safe.
+ *
+ * \return A reference to the logger object.
+ */
+logger & logger::end()
+{
+    // the std::cerr requires a lock
+    //
+    try
+    {
+        if(g_log_callback != nullptr)
+        {
+            g_log_callback(f_level, f_log.str());
+        }
+        else if(f_level >= log_level_t::info)
+        {
+            std::cerr << to_string(f_level) << ": " << f_log.str() << std::endl;
+        }
+
+        f_log.str(std::string());
+    }
+    catch(...)
+    {
+        unlock();
+        throw;
+    }
+
+    unlock();
+
+    return *this;
+}
+
+
+/** \brief Convert a log level to a string.
+ *
+ * This function transforms a log_level_t value to a string which can then
+ * be used in a log message.
+ *
+ * \exception cppthread_invalid_error
+ * If the log level is not one of the know log levels, then the function
+ * raises this exception.
+ *
+ * \param[in] level  The message log level to convert to a string.
+ *
+ * \return A string representing the log level.
+ */
+std::string to_string(log_level_t level)
+{
+    switch(level)
+    {
+    case log_level_t::debug:
+        return "debug";
+
+    case log_level_t::info:
+        return "info";
+
+    case log_level_t::warning:
+        return "warning";
+
+    case log_level_t::error:
+        return "error";
+
+    case log_level_t::fatal:
+        return "fatal";
+
+    }
+
+    throw cppthread_invalid_error("unknown log level ("
+                                 + std::to_string(static_cast<int>(level))
+                                 + ")");
+}
+
+
+} // namespace cppthread
+// vim: ts=4 sw=4 et

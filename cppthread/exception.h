@@ -1,4 +1,3 @@
-// Snap Websites Server -- advanced handling of Unix thread
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -18,19 +17,15 @@
 #pragma once
 
 /** \file
- * \brief Thread Runner and Managers.
+ * \brief Exceptions for the thread environment.
  *
- * This file includes the declaration and implementation (For templates)
- * of classes used to manage threads the easy way. Especially, our
- * implementation is aware of object destructors so a thread manager
- * (snap_thread) can be destroyed. It will automatically and properly
- * wait for its runner (the actual system pthread) to exit before
- * finishing up its and its runner clean up.
+ * This file includes the definitions of exceptions used by the Thread
+ * environment.
  */
 
 // libexcept lib
 //
-#include <libexcept/exception.h>
+#include    <libexcept/exception.h>
 
 
 namespace cppthread
@@ -38,76 +33,17 @@ namespace cppthread
 
 
 
-class cppthread_logic_error : public libexcept::logic_exception_t
-{
-public:
-    explicit cppthread_logic_error(char const *        whatmsg) : logic_exception_t("cppthread programmer error: " + std::string(whatmsg)) {}
-    explicit cppthread_logic_error(std::string const & whatmsg) : logic_exception_t("cppthread programmer error: " + whatmsg) {}
-};
+DECLARE_LOGIC_ERROR(cppthread_logic_error);
 
+DECLARE_MAIN_EXCEPTION(cppthread_exception);
 
-class cppthread_exception : public libexcept::exception_t
-{
-public:
-    explicit cppthread_exception(char const *        whatmsg) : exception_t("cppthread: " + std::string(whatmsg)) {}
-    explicit cppthread_exception(std::string const & whatmsg) : exception_t("cppthread: " + whatmsg) {}
-};
-
-
-class cppthread_exception_not_started : public cppthread_exception
-{
-public:
-    explicit cppthread_exception_not_started(char const *        whatmsg) : cppthread_exception(whatmsg) {}
-    explicit cppthread_exception_not_started(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
-};
-
-
-class cppthread_exception_in_use_error : public cppthread_exception
-{
-public:
-    explicit cppthread_exception_in_use_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
-    explicit cppthread_exception_in_use_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
-};
-
-
-class cppthread_exception_not_locked_error : public cppthread_exception
-{
-public:
-    explicit cppthread_exception_not_locked_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
-    explicit cppthread_exception_not_locked_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
-};
-
-
-class cppthread_exception_not_locked_once_error : public cppthread_exception
-{
-public:
-    explicit cppthread_exception_not_locked_once_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
-    explicit cppthread_exception_not_locked_once_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
-};
-
-
-class cppthread_exception_mutex_failed_error : public cppthread_exception
-{
-public:
-    explicit cppthread_exception_mutex_failed_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
-    explicit cppthread_exception_mutex_failed_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
-};
-
-
-class cppthread_exception_invalid_error : public cppthread_exception
-{
-public:
-    explicit cppthread_exception_invalid_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
-    explicit cppthread_exception_invalid_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
-};
-
-
-class cppthread_exception_system_error : public cppthread_exception
-{
-public:
-    explicit cppthread_exception_system_error(char const *        whatmsg) : cppthread_exception(whatmsg) {}
-    explicit cppthread_exception_system_error(std::string const & whatmsg) : cppthread_exception(whatmsg) {}
-};
+DECLARE_EXCEPTION(cppthread_exception, cppthread_not_started);
+DECLARE_EXCEPTION(cppthread_exception, cppthread_in_use_error);
+DECLARE_EXCEPTION(cppthread_exception, cppthread_not_locked_error);
+DECLARE_EXCEPTION(cppthread_exception, cppthread_not_locked_once_error);
+DECLARE_EXCEPTION(cppthread_exception, cppthread_mutex_failed_error);
+DECLARE_EXCEPTION(cppthread_exception, cppthread_invalid_error);
+DECLARE_EXCEPTION(cppthread_exception, cppthread_system_error);
 
 
 

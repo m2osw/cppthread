@@ -1,4 +1,3 @@
-// Snap Websites Server -- C++ object to handle threads
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -25,20 +24,16 @@
 
 // self
 //
-#include "cppthread/guard.h"
+#include    "cppthread/guard.h"
 
-#include "cppthread/exception.h"
-#include "cppthread/mutex.h"
-
-
-// advgetopt lib
-//
-#include "advgetopt/log.h"
+#include    "cppthread/exception.h"
+#include    "cppthread/log.h"
+#include    "cppthread/mutex.h"
 
 
 // last include
 //
-#include "snapdev/poison.h"
+#include    "snapdev/poison.h"
 
 
 
@@ -126,9 +121,9 @@ guard::~guard()
     catch(std::exception const & e)
     {
         // a log was already printed, we do not absolutely need another one
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "guard::unlock() threw an exception while in the ~lock() function."
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "guard::unlock() threw an exception while in the ~lock() function."
+            << end;
         std::terminate();
     }
 }
@@ -154,5 +149,5 @@ void guard::unlock()
 
 
 
-} // namespace snap
+} // namespace cppthread
 // vim: ts=4 sw=4 et

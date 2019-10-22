@@ -1,4 +1,3 @@
-// Snap Websites Server -- advanced handling of Unix thread
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -35,7 +34,7 @@
 
 // C++ lib
 //
-#include <vector>
+#include    <vector>
 
 
 
@@ -46,11 +45,15 @@ namespace cppthread
 class runner;
 
 
+constexpr pid_t                 PID_UNDEFINED = static_cast<pid_t>(-1);
+constexpr pthread_t             THREAD_UNDEFINED = static_cast<pthread_t>(-1);
+
+
 class thread
 {
 public:
-    typedef std::shared_ptr<thread>      pointer_t;
-    typedef std::vector<pointer_t>          vector_t;
+    typedef std::shared_ptr<thread>     pointer_t;
+    typedef std::vector<pointer_t>      vector_t;
 
                                 thread(std::string const & name, runner * runner);
                                 thread(thread const & rhs) = delete;
@@ -79,8 +82,8 @@ private:
     bool                        f_running = false;
     bool                        f_started = false;
     bool                        f_stopping = false;
-    pid_t                       f_tid = -1;
-    pthread_t                   f_thread_id = -1;
+    pid_t                       f_tid = PID_UNDEFINED;
+    pthread_t                   f_thread_id = THREAD_UNDEFINED;
     pthread_attr_t              f_thread_attr = pthread_attr_t();
     std::exception_ptr          f_exception = std::exception_ptr();
 };

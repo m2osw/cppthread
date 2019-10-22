@@ -1,4 +1,3 @@
-// Snap Websites Server -- C++ object to handle threads
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -25,29 +24,25 @@
 
 // self
 //
-#include "cppthread/thread.h"
+#include    "cppthread/thread.h"
 
-#include "cppthread/exception.h"
-#include "cppthread/guard.h"
-#include "cppthread/runner.h"
-
-
-// advgetopt lib
-//
-#include "advgetopt/log.h"
+#include    "cppthread/exception.h"
+#include    "cppthread/guard.h"
+#include    "cppthread/log.h"
+#include    "cppthread/runner.h"
 
 
 // C lib
 //
-#include <signal.h>
-#include <sys/syscall.h>
-#include <sys/sysinfo.h>
-#include <unistd.h>
+#include    <signal.h>
+#include    <sys/syscall.h>
+#include    <sys/sysinfo.h>
+#include    <unistd.h>
 
 
 // last include
 //
-#include "snapdev/poison.h"
+#include    <snapdev/poison.h>
 
 
 
@@ -83,31 +78,31 @@ thread::thread(std::string const & name, runner * runner)
 {
     if(f_runner == nullptr)
     {
-        throw cppthread_exception_invalid_error("runner missing in thread() constructor");
+        throw cppthread_invalid_error("runner missing in thread() constructor");
     }
     if(f_runner->f_thread != nullptr)
     {
-        throw cppthread_exception_in_use_error("this runner (" + name + ") is already is use");
+        throw cppthread_in_use_error("this runner (" + name + ") is already is use");
     }
 
     int err(pthread_attr_init(&f_thread_attr));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "the thread attributes could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
-        throw cppthread_exception_invalid_error("pthread_attr_init() failed");
+        log << log_level_t::fatal
+            << "the thread attributes could not be initialized, error #"
+            << err
+            << end;
+        throw cppthread_invalid_error("pthread_attr_init() failed");
     }
     err = pthread_attr_setdetachstate(&f_thread_attr, PTHREAD_CREATE_JOINABLE);
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "the thread detach state could not be initialized, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "the thread detach state could not be initialized, error #"
+            << err
+            << end;
         pthread_attr_destroy(&f_thread_attr);
-        throw cppthread_exception_invalid_error("pthread_attr_setdetachstate() failed");
+        throw cppthread_invalid_error("pthread_attr_setdetachstate() failed");
     }
 
     f_runner->f_thread = this;
@@ -130,10 +125,10 @@ thread::~thread()
     {
         stop();
     }
-    catch(cppthread_exception_mutex_failed_error const &)
+    catch(cppthread_mutex_failed_error const &)
     {
     }
-    catch(cppthread_exception_invalid_error const &)
+    catch(cppthread_invalid_error const &)
     {
     }
     f_runner->f_thread = nullptr;
@@ -141,10 +136,10 @@ thread::~thread()
     int const err(pthread_attr_destroy(&f_thread_attr));
     if(err != 0)
     {
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "the thread attributes could not be destroyed, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::error
+            << "the thread attributes could not be destroyed, error #"
+            << err
+            << end;
     }
 }
 
@@ -298,9 +293,9 @@ void thread::internal_run()
     {
         // ... any other exception terminates the whole process ...
         //
-        advgetopt::log << advgetopt::log_level_t::fatal
-                       << "thread got an unknown exception (a.k.a. non-std::exception), exiting process."
-                       << advgetopt::end;
+        log << log_level_t::fatal
+            << "thread got an unknown exception (a.k.a. non-std::exception), exiting process."
+            << end;
 
         // rethrow, our goal is not to ignore the exception, only to
         // have a log about it
@@ -314,7 +309,7 @@ void thread::internal_run()
     {
         guard lock(f_mutex);
         f_running = false;
-        f_tid = -1;
+        f_tid = PID_UNDEFINED;
         f_mutex.signal();
     }
 }
@@ -337,17 +332,17 @@ bool thread::start()
 
     if(f_running || f_started)
     {
-        advgetopt::log << advgetopt::log_level_t::warning
-                       << "the thread is already running"
-                       << advgetopt::end;
+        log << log_level_t::warning
+            << "the thread is already running"
+            << end;
         return false;
     }
 
     if(!f_runner->is_ready())
     {
-        advgetopt::log << advgetopt::log_level_t::warning
-                       << "the thread runner is not ready"
-                       << advgetopt::end;
+        log << log_level_t::warning
+            << "the thread runner is not ready"
+            << end;
         return false;
     }
 
@@ -361,10 +356,10 @@ bool thread::start()
     {
         f_running = false;
 
-        advgetopt::log << advgetopt::log_level_t::error
-                       << "the thread could not be created, error #"
-                       << err
-                       << advgetopt::end;
+        log << log_level_t::error
+            << "the thread could not be created, error #"
+            << err
+            << end;
         return false;
     }
 
@@ -444,12 +439,14 @@ void thread::stop()
  * Under Linux, threads are tasks like any others. Each task is given a
  * `pid_t` value. This function returns that `pid_t` for this thread.
  *
- * When the thread is not running this function returns -1. Note, however,
- * that the value is set a little after the thread started and cleared a
- * little before the thread exists. This is **not** a good way to know
- * whether the thread is running. Use the is_running() function instead.
+ * When the thread is not running this function returns PID_UNDEFINED.
+ * Note, however, that the value is set a little after the thread started
+ * and cleared a little before the thread exits. This is **not** a good
+ * way to know whether the thread is running. Use the is_running() function
+ * instead.
  *
- * \return The thread identifier (tid) or -1 if the thread is not running.
+ * \return The thread identifier (tid) or PID_UNDEFINED if the thread is
+ *         not running.
  */
 pid_t thread::get_thread_tid() const
 {
@@ -670,5 +667,5 @@ pid_t gettid()
 
 
 
-} // namespace snap
+} // namespace cppthread
 // vim: ts=4 sw=4 et

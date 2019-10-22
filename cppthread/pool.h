@@ -1,4 +1,3 @@
-// Snap Websites Server -- advanced handling of Unix thread
 // Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
@@ -100,11 +99,11 @@ public:
     {
         if(pool_size == 0)
         {
-            throw cppthread_exception_invalid_error("the pool size must be a positive number (1 or more)");
+            throw cppthread_invalid_error("the pool size must be a positive number (1 or more)");
         }
         if(pool_size > 1000)
         {
-            throw cppthread_exception_invalid_error("pool size too large (we accept up to 1000 at this time, which is already very very large!)");
+            throw cppthread_invalid_error("pool size too large (we accept up to 1000 at this time, which is already very very large!)");
         }
         for(size_t i(0); i < pool_size; ++i)
         {
