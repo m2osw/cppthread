@@ -1,3 +1,9 @@
+cppthread (1.0.1.0~xenial) xenial; urgency=high
+
+  * Moved the advgetopt log.cpp/h to this library instead.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 29 Sep 2019 01:51:46 -0800
+
 cppthread (1.0.0.0~xenial) xenial; urgency=high
 
   * Moving the snap_thread.cpp/.h to its own project to use it everywhere.
