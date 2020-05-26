@@ -1,3 +1,9 @@
+cppthread (1.0.1.0~bionic) bionic; urgency=high
+
+  * Create a bionic version.
+
+ -- Alexis Wilke <alexis@m2osw.com>  May,  1 Apr 2020 00:12:48 -0800
+
 cppthread (1.0.1.0~xenial) xenial; urgency=high
 
   * Moved the advgetopt log.cpp/h to this library instead.
