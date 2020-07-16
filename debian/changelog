@@ -1,3 +1,9 @@
+cppthread (1.0.2.0~bionic) bionic; urgency=high
+
+  * Changed the thread destructor to catch any and all exceptions.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 15 Jul 2020 20:51:14 -0700
+
 cppthread (1.0.1.1~bionic) bionic; urgency=high
 
   * Bump version to get an ARM version.

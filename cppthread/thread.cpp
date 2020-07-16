@@ -125,11 +125,10 @@ thread::~thread()
     {
         stop();
     }
-    catch(cppthread_mutex_failed_error const &)
+    catch(...)
     {
-    }
-    catch(cppthread_invalid_error const &)
-    {
+        // stop() may rethrow any user exception which we have to ignore in
+        // a destructor...
     }
     f_runner->f_thread = nullptr;
 
