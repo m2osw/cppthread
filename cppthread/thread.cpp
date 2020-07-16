@@ -114,7 +114,7 @@ thread::thread(std::string const & name, runner * runner)
  * The destructor of a Snap! C++ thread object ensures that the thread stops
  * running before actually deleting the runner object.
  *
- * Then it destroyes the thread attributes and returns.
+ * Then it destroys the thread attributes and returns.
  *
  * The destructor also removes the thread from the runner so the runner
  * can create another thread controller and run again.
