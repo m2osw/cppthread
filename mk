@@ -3,7 +3,7 @@
 # Sample script to run make without having to retype the long path each time
 # This will work if you built the environment using our ~/bin/build-snap script
 
-PROCESSORS=4
+PROCESSORS=`nproc`
 
 case $1 in
 "-l")
