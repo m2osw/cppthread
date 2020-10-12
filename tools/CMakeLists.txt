@@ -1,6 +1,9 @@
-# Copyright (c) 2013-2019 Made to Order Software Corp.
-# https://snapwebsites.org/project/cppthread
 #
+# Copyright (c) 2020  Made to Order Software Corp.  All Rights Reserved.
+#
+# https://snapwebsites.org/project/snaplogger
+# contact@m2osw.com
+# 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -14,28 +17,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#
 
 
-cmake_minimum_required(VERSION 2.8.4)
+##
+## build the thread discovery tool
+##
+project(show-threads)
 
-project(cppthread_library)
-
-find_package(SnapCMakeModules REQUIRED)
-find_package(LibExcept        REQUIRED)
-find_package(SnapDev          REQUIRED)
-find_package(SnapDoxygen              )
-
-SnapGetVersion(CPPTHREAD ${CMAKE_CURRENT_SOURCE_DIR})
-
-include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
+add_executable(${PROJECT_NAME}
+    show_threads.cpp
 )
 
-add_subdirectory(cppthread )
-add_subdirectory(tools     )
-add_subdirectory(tests     )
-add_subdirectory(doc       )
-add_subdirectory(cmake     )
+target_link_libraries(${PROJECT_NAME}
+    cppthread
+)
 
-# vim: ts=4 sw=4 et
+install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+
+    COMPONENT
+        runtime
+)
+
+
+# vim: ts=4 sw=4 et nocindent
+

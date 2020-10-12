@@ -32,6 +32,11 @@
 #include    "cppthread/runner.h"
 
 
+// snapdev lib
+//
+#include    <snapdev/glob_to_list.h>
+
+
 // C lib
 //
 #include    <signal.h>
@@ -594,6 +599,63 @@ pid_t gettid()
     return static_cast<pid_t>(syscall(SYS_gettid));
 }
 
+
+/** \brief Retrieve the list of threads for a given process.
+ *
+ * This function reads the list of PID from `/proc/<pid>/task/\*` which is
+ * the list of threads of a process has. If only one PID, then this is the
+ * main process PID and the process has no threads currently running.
+ *
+ * \param[in] pid  The parent process to be searched for threads.
+ *
+ * \return A vector of PIDs.
+ */
+process_ids_t get_thread_ids(pid_t pid)
+{
+    process_ids_t results;
+
+    if(pid == -1)
+    {
+        pid = getpid();
+    }
+
+    std::string pattern("/proc/");
+    pattern += std::to_string(pid);
+    pattern += "/task/*";
+
+    snap::glob_to_list<std::vector<std::string>> glob;
+    if(glob.read_path<
+              snap::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+            , snap::glob_to_list_flag_t::GLOB_FLAG_ONLY_DIRECTORIES>(pattern))
+    {
+        for(auto s : glob)
+        {
+            pid_t id(0);
+            std::string::size_type pos(s.rfind('/') + 1);
+
+            bool valid(pos < s.length());
+            for(; pos < s.length(); ++pos)
+            {
+                char const c(s[pos]);
+                if(c >= '0' && c <= '9')
+                {
+                    id = id * 10 + c - '0';
+                }
+                else
+                {
+                    valid = false;
+                    break;
+                }
+            }
+            if(valid)
+            {
+                results.push_back(id);
+            }
+        }
+    }
+
+    return results;
+}
 
 
 

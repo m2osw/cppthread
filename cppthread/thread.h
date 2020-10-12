@@ -89,9 +89,13 @@ private:
 };
 
 
-int                  get_total_number_of_processors();
-int                  get_number_of_available_processors();
-pid_t                gettid();
+int                 get_total_number_of_processors();
+int                 get_number_of_available_processors();
+pid_t               gettid();
+
+typedef std::vector<pid_t>      process_ids_t;
+
+process_ids_t       get_thread_ids(pid_t pid = -1);
 
 
 } // namespace cppthread
