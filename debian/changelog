@@ -1,3 +1,12 @@
+cppthread (1.0.4.0~bionic) bionic; urgency=high
+
+  * Added the is_process_running() function to the cppthread environment.
+  * Added a tool to check whether a process is running.
+  * Fixed a few entries that mentioned snaplogger instead of cppthread.
+  * Fixed a bug in the show-threads tool, it would not return 0 properly.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 25 Dec 2020 09:27:27 -0800
+
 cppthread (1.0.3.0~bionic) bionic; urgency=high
 
   * Added a function to list the process threads identifiers.

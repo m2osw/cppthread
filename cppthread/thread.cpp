@@ -40,6 +40,7 @@
 // C lib
 //
 #include    <signal.h>
+#include    <sys/stat.h>
 #include    <sys/syscall.h>
 #include    <sys/sysinfo.h>
 #include    <unistd.h>
@@ -658,6 +659,39 @@ process_ids_t get_thread_ids(pid_t pid)
 }
 
 
+/** \brief Check whether a process is running or not.
+ *
+ * This function checks whether the /proc/<pid> directory exists. If so,
+ * that means that the process with \p pid is current running.
+ *
+ * \note
+ * Keep in mind that between the time this function checks whether a process
+ * is running or not and the time it returns, the given process may have
+ * stopped or a new process may have been started.
+ * \note
+ * Also, security wise, this is not safe except around the time a process
+ * quits and even though, on a very heavy system starting new processes all
+ * the time, it may re-use the same \p pid very quickly.
+ *
+ * \param[in] pid  The process identifier to check.
+ *
+ * \return true if the process is currently running.
+ */
+bool is_process_running(pid_t pid)
+{
+    if(pid == getpid())
+    {
+        // funny guy testing whether he himself is running!?
+        //
+        return true;
+    }
+
+    std::string proc_path("/proc/");
+    proc_path += std::to_string(pid);
+
+    struct stat st;
+    return stat(proc_path.c_str(), &st) == 0;
+}
 
 
 

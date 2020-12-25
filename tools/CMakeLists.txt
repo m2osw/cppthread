@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2020  Made to Order Software Corp.  All Rights Reserved.
 #
-# https://snapwebsites.org/project/snaplogger
+# https://snapwebsites.org/project/cppthread
 # contact@m2osw.com
 # 
 # This program is free software; you can redistribute it and/or modify
@@ -45,5 +45,29 @@ install(
 )
 
 
-# vim: ts=4 sw=4 et nocindent
+##
+## build the "process is running" tool
+##
+project(process-is-running)
 
+add_executable(${PROJECT_NAME}
+    process_is_running.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    cppthread
+)
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+
+    COMPONENT
+        runtime
+)
+
+
+# vim: ts=4 sw=4 et nocindent

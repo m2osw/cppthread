@@ -19,7 +19,7 @@
 /** \file
  * \brief Definitions of the cppthread version.
  *
- * This header includes the snaplogger library version and functions you
+ * This header includes the cppthread library version and functions you
  * can use to check the current version of the library.
  */
 

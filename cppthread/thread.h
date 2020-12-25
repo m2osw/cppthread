@@ -96,6 +96,7 @@ pid_t               gettid();
 typedef std::vector<pid_t>      process_ids_t;
 
 process_ids_t       get_thread_ids(pid_t pid = -1);
+bool                is_process_running(pid_t pid);
 
 
 } // namespace cppthread

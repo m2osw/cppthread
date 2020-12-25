@@ -32,9 +32,9 @@
  * Especially, if two different threads attempt to log a message
  * simultaneously, only one of them will be allowed to build their
  * message and the other one will be blocked for the entire time. Our
- * snaplogger, on the other hand, allows any number of threads to build
+ * snaplogger, on the other hand, allows any number of threads to generate
  * errors in parallel, only the processing at the end, which can be done
- * asynchronously requires serialization.
+ * asynchronously, requires serialization.
  */
 
 // self

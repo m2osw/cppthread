@@ -37,7 +37,7 @@ The project is covered by the GPL 2.0 license.
 # Bugs
 
 Submit bug reports and patches on
-[github](https://github.com/m2osw/snaplogger/issues).
+[github](https://github.com/m2osw/cppthread/issues).
 
 
 _This file is part of the [snapcpp project](https://snapwebsites.org/)._
