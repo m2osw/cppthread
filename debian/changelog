@@ -1,3 +1,9 @@
+cppthread (1.0.4.1~bionic) bionic; urgency=high
+
+  * Added a new include directory for the new tool.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 04 Jan 2021 21:55:31 -0800
+
 cppthread (1.0.4.0~bionic) bionic; urgency=high
 
   * Added the is_process_running() function to the cppthread environment.

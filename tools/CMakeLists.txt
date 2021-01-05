@@ -58,6 +58,10 @@ target_link_libraries(${PROJECT_NAME}
     cppthread
 )
 
+include_directories(
+    ${SNAPDEV_INCLUDE_DIRS}
+)
+
 install(
     TARGETS
         ${PROJECT_NAME}
