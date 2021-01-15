@@ -70,6 +70,8 @@ public:
     bool                        kill(int sig);
     pid_t                       get_thread_tid() const;
     mutex &                     get_thread_mutex() const;
+    void                        set_log_all_exceptions(bool log_all_exceptions);
+    bool                        get_log_all_exceptions() const;
 
 private:
     // internal function to start the runner
@@ -82,6 +84,7 @@ private:
     bool                        f_running = false;
     bool                        f_started = false;
     bool                        f_stopping = false;
+    bool                        f_log_all_exceptions = true;
     pid_t                       f_tid = PID_UNDEFINED;
     pthread_t                   f_thread_id = THREAD_UNDEFINED;
     pthread_attr_t              f_thread_attr = pthread_attr_t();

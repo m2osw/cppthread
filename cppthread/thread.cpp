@@ -288,11 +288,20 @@ void thread::internal_run()
         //
         //tcp_client_server::cleanup_on_thread_exit();
     }
-    catch(std::exception const &)
+    catch(std::exception const & e)
     {
         // keep a copy of the exception
         //
         f_exception = std::current_exception();
+
+        if(f_log_all_exceptions)
+        {
+            log << log_level_t::fatal
+                << "thread got exception: \""
+                << e.what()
+                << "\", exiting thread now."
+                << end;
+        }
     }
     catch(...)
     {
@@ -470,6 +479,64 @@ pid_t thread::get_thread_tid() const
 mutex & thread::get_thread_mutex() const
 {
     return f_mutex;
+}
+
+
+/** \brief Whether to log exceptions caught in the thread.
+ *
+ * We catch exceptions that happen in your threads. By default, we log them
+ * with the basic cppthread log mechanism. If you do not want to have this
+ * intermediate logging kick in, you can set this flag to false.
+ *
+ * This flag is defaulted to true because in many cases you are not joining
+ * a thread when the exception occurs. That means your code would never
+ * see the exception. Instead, you'd have a dangling process as it is
+ * likely to expect things are happening in the thread and if not, it
+ * gets stuck. At least, in this way, by default you get a message in your
+ * logs.
+ *
+ * \note
+ * Unknown exceptions (i.e. those not derived from std::exception), are
+ * always logged and re-thrown (which has the effect of terminating your
+ * process). Those exceptions are always logged, whatever the state of
+ * this "log all exceptions" flag.
+ *
+ * \param[in] log_all_exceptions  Whether to log (true) all exceptions or
+ * not (false).
+ *
+ * \sa get_log_all_exceptions()
+ */
+void thread::set_log_all_exceptions(bool log_all_exceptions)
+{
+    f_log_all_exceptions = log_all_exceptions;
+}
+
+
+/** \brief Retrieve whether all exceptions get logged or not.
+ *
+ * This function returns true if all exceptions are to be logged. By default
+ * this flag is set to true. You can change it with the
+ * set_log_all_exceptions() function.
+ *
+ * Internally, the flag is used to know whether we should log exceptions.
+ * It is very useful to do so if you do not join your thread on a constant
+ * basis (i.e. in a service where a thread runs as long as the service
+ * itself--you probably will want to know when the thread runs in a problem).
+ *
+ * This also means you do not have to log the exception yourself unless you
+ * need some special handling to indicate all the possible messages and
+ * parameters found in the exception object. However, the logging doesn't
+ * prevent the system from re-throwing the exception once the thread was
+ * joined. In other words, whether you log the exception or not, you most
+ * certainly want to catch it or your process will be terminated.
+ *
+ * \return true if the thread object is to log all exceptions.
+ *
+ * \sa set_log_all_exceptions()
+ */
+bool thread::get_log_all_exceptions() const
+{
+    return f_log_all_exceptions;
 }
 
 
