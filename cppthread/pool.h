@@ -105,6 +105,7 @@ public:
         {
             throw cppthread_invalid_error("pool size too large (we accept up to 1000 at this time, which is already very very large!)");
         }
+        f_workers.reserve(pool_size);
         for(size_t i(0); i < pool_size; ++i)
         {
             f_workers.push_back(std::make_shared<worker_thread_t>(
