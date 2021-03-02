@@ -514,14 +514,14 @@ bool mutex::timed_wait(uint64_t const usecs)
 
     // now + user specified usec
     struct timespec timeout;
-    timeout.tv_sec = vtime.tv_sec + usecs / 1000000ULL;
-    uint64_t micros(vtime.tv_usec + usecs % 1000000ULL);
-    if(micros > 1000000ULL)
+    timeout.tv_sec = vtime.tv_sec + usecs / 1'000'000ULL;
+    std::uint64_t micros(vtime.tv_usec + usecs % 1'000'000ULL);
+    if(micros > 1'000'000ULL)
     {
         timeout.tv_sec++;
-        micros -= 1000000ULL;
+        micros -= 1'000'000ULL;
     }
-    timeout.tv_nsec = static_cast<long>(micros * 1000ULL);
+    timeout.tv_nsec = static_cast<long>(micros * 1'000ULL);
 
     err = pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &timeout);
     if(err != 0)
