@@ -499,8 +499,8 @@ bool mutex::timed_wait(uint64_t const usecs)
     int err(0);
 
     // get time now
-    struct timeval vtime;
-    if(gettimeofday(&vtime, nullptr) != 0)
+    struct timespec abstime;
+    if(clock_gettime(CLOCK_REALTIME, &abstime) != 0)
     {
         err = errno;
         log << log_level_t::fatal
@@ -513,17 +513,16 @@ bool mutex::timed_wait(uint64_t const usecs)
     }
 
     // now + user specified usec
-    struct timespec timeout;
-    timeout.tv_sec = vtime.tv_sec + usecs / 1'000'000ULL;
-    std::uint64_t micros(vtime.tv_usec + usecs % 1'000'000ULL);
-    if(micros > 1'000'000ULL)
+    abstime.tv_sec += usecs / 1'000'000ULL;
+    std::uint64_t nanos(abstime.tv_nsec + (usecs % 1'000'000ULL) * 1'000ULL);
+    if(nanos > 1'000'000'000ULL)
     {
-        timeout.tv_sec++;
-        micros -= 1'000'000ULL;
+        ++abstime.tv_sec;
+        nanos -= 1'000'000'000ULL;
     }
-    timeout.tv_nsec = static_cast<long>(micros * 1'000ULL);
+    abstime.tv_nsec = static_cast<long>(nanos);
 
-    err = pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &timeout);
+    err = pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &abstime);
     if(err != 0)
     {
         if(err == ETIMEDOUT)
@@ -537,6 +536,11 @@ bool mutex::timed_wait(uint64_t const usecs)
             << err
             << " -- "
             << strerror(err)
+            << " (time out sec = "
+            << abstime.tv_sec
+            << ", nsec = "
+            << abstime.tv_nsec
+            << ")"
             << end;
         throw cppthread_mutex_failed_error("pthread_cond_timedwait() failed");
     }

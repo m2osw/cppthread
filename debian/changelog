@@ -1,3 +1,9 @@
+cppthread (1.0.7.0~bionic) bionic; urgency=high
+
+  * Use clock_gettime() instead of gettimeofday() for full precision.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 07 Mar 2021 14:27:05 -0800
+
 cppthread (1.0.6.0~bionic) bionic; urgency=high
 
   * Reserve pool size in the vector before the loop.
