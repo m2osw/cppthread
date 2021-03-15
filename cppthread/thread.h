@@ -42,6 +42,7 @@ namespace cppthread
 {
 
 
+enum class leave_status_t;
 class runner;
 
 
@@ -76,7 +77,10 @@ public:
 private:
     // internal function to start the runner
     friend void *               func_internal_start(void * thread);
-    void                        internal_run();
+    void                        internal_thread();
+    bool                        internal_enter();
+    bool                        internal_run();
+    void                        internal_leave(leave_status_t status);
 
     std::string const           f_name = std::string();
     runner *                    f_runner = nullptr;

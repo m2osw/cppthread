@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
 // This program is free software; you can redistribute it and/or modify
@@ -146,6 +146,78 @@ bool runner::continue_running() const
         return true;
     }
     return !f_thread->is_stopping();
+}
+
+
+/** \brief Signal that the run() function is about to be entered.
+ *
+ * This function is often used as a way to initialize the thread runner.
+ * The default is to log the fact that the thread is being started. You
+ * often call it at the start of your enter() implementation.
+ *
+ * The reason for heaving a separate enter() and leave() pair of functions
+ * is to help with the possibility that your run() function throws and is
+ * not waited on. If the \em parent thread is working on something else
+ * or waiting on a different thread, then you would have no idea that the
+ * thread is ending.
+ *
+ * \important
+ * The enter() will always be called, but the run() and leave() functions
+ * do not get called if a preceeding call ends in an abnormal manner (i.e.
+ * such as emitting an abort() call, a SEGV, etc.) Exceptions are properly
+ * handled, however, if the enter() function exits with an exception, then
+ * the run() function doesn't get called.
+ */
+void runner::enter()
+{
+    log << log_level_t::info
+        << "entering thread #"
+        << f_thread->get_thread_tid()
+        << "."
+        << end;
+}
+
+
+/** \brief Signal that the run() function has returned.
+ *
+ * This function is called whenever the run() function is done. It may also
+ * be called if the enter() function throws in which case the run() function
+ * does not get called but the leave() function still gets called.
+ *
+ * This function is useful to know that the run() function returned without
+ * you having to instrument your run() function with a try/catch. This is
+ * particularly useful to detect that a thread died when not expected.
+ * Specifically, if your \em parent thread is not activelly waiting on
+ * your thread demise, the fact that the run() function threw an exception
+ * will not be known until later if ever. The leave() function can act in
+ * such a way that the \em parent thread is then aware of the issue and
+ * either quits, restarts the thread, or just reports the issue.
+ *
+ * The \p status parameter defines which location the leave() function is
+ * called from. It can be called in the following cases:
+ *
+ * * LEAVE_STATUS_NORMAL -- the enter() and run() functions worked as expected.
+ * * LEAVE_STATUS_INITIALIZATION_FAILED -- the enter() function failed with
+ * an exception; the run() function was never called.
+ * * LEAVE_STATUS_THREAD_FAILED -- the run() function was called and it
+ * generated an exception.
+ * * LEAVE_STATUS_INSTRUMENTATION -- a function, other than the enter() or
+ * run() functions, generated an error.
+ *
+ * The default function logs the fact that the thread is exiting. You often
+ * call it at the end of your own leave() implementation.
+ *
+ * \param[in] status  The location from which the leave() function get called.
+ */
+void runner::leave(leave_status_t status)
+{
+    log << log_level_t::info
+        << "leaving thread #"
+        << f_thread->get_thread_tid()
+        << " with status "
+        << static_cast<int>(status)     // TODO: write name too
+        << "."
+        << end;
 }
 
 

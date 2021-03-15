@@ -29,6 +29,10 @@ case $1 in
 	) 2>&1 | less -SR
 	;;
 
+"-r")
+	make -j${PROCESSORS} -C ../../../RELEASE/contrib/cppthread
+	;;
+
 "")
 	make -j${PROCESSORS} -C ../../../BUILD/contrib/cppthread
 	;;

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
 // This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,15 @@ namespace cppthread
 class thread;
 
 
+enum class leave_status_t
+{
+    LEAVE_STATUS_NORMAL,
+    LEAVE_STATUS_INITIALIZATION_FAILED,
+    LEAVE_STATUS_THREAD_FAILED,
+    LEAVE_STATUS_INSTRUMENTATION,
+};
+
+
 // this is the actual thread because we cannot use the main thread
 // object destructor to properly kill a thread in a C++ environment
 //
@@ -64,7 +73,9 @@ public:
     std::string const & get_name() const;
     virtual bool        is_ready() const;
     virtual bool        continue_running() const;
+    virtual void        enter();
     virtual void        run() = 0;
+    virtual void        leave(leave_status_t status);
     thread *            get_thread() const;
     pid_t               gettid() const;
 

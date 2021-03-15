@@ -1,3 +1,12 @@
+cppthread (1.0.8.0~bionic) bionic; urgency=high
+
+  * Added an enter() and leave() pair of functions to have signals when a
+    thread starts end ends.
+  * Enhanced the documentation in the README.md.
+  * Added a -r option to the mk script.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 15 Mar 2021 12:07:22 -0700
+
 cppthread (1.0.7.0~bionic) bionic; urgency=high
 
   * Use clock_gettime() instead of gettimeofday() for full precision.

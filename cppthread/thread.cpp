@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
 // https://snapwebsites.org/project/cppthread
 //
 // This program is free software; you can redistribute it and/or modify
@@ -228,7 +228,7 @@ bool thread::is_stopping() const
  * This function is called when starting the thread. This is a static
  * function since pthread can only accept such a function pointer.
  *
- * The function then calls the internal_run().
+ * The function then calls the internal_thread().
  *
  * \note
  * The function parameter is a void * instead of thread because that
@@ -243,7 +243,7 @@ bool thread::is_stopping() const
 void * func_internal_start(void * system_thread)
 {
     thread * t(reinterpret_cast<thread *>(system_thread));
-    t->internal_run();
+    t->internal_thread();
     return nullptr; // == pthread_exit(nullptr);
 }
 
@@ -265,22 +265,34 @@ void * func_internal_start(void * system_thread)
  * process (if a thread creates another thread, then it can be propagated
  * multiple times between all the threads up to the main process.)
  */
-void thread::internal_run()
+void thread::internal_thread()
 {
-    {
-        guard lock(f_mutex);
-        f_tid = gettid();
-    }
-
     try
     {
         {
             guard lock(f_mutex);
+            f_tid = gettid();
             f_started = true;
             f_mutex.signal();
         }
 
-        f_runner->run();
+        // if the enter failed, do not continue
+        //
+        if(internal_enter())
+        {
+            if(internal_run())
+            {
+                internal_leave(leave_status_t::LEAVE_STATUS_NORMAL);
+            }
+            else
+            {
+                internal_leave(leave_status_t::LEAVE_STATUS_THREAD_FAILED);
+            }
+        }
+        else
+        {
+            internal_leave(leave_status_t::LEAVE_STATUS_INITIALIZATION_FAILED);
+        }
 
         // if useful (necessary) it would probably be better to call this
         // function from here; see function and read the "note" section
@@ -297,18 +309,20 @@ void thread::internal_run()
         if(f_log_all_exceptions)
         {
             log << log_level_t::fatal
-                << "thread got exception: \""
+                << "thread internal_thread() got exception: \""
                 << e.what()
                 << "\", exiting thread now."
                 << end;
         }
+
+        internal_leave(leave_status_t::LEAVE_STATUS_INSTRUMENTATION);
     }
     catch(...)
     {
         // ... any other exception terminates the whole process ...
         //
         log << log_level_t::fatal
-            << "thread got an unknown exception (a.k.a. non-std::exception), exiting process."
+            << "thread internal_thread() got an unknown exception (a.k.a. non-std::exception), exiting process."
             << end;
 
         // rethrow, our goal is not to ignore the exception, only to
@@ -325,6 +339,136 @@ void thread::internal_run()
         f_running = false;
         f_tid = PID_UNDEFINED;
         f_mutex.signal();
+    }
+}
+
+
+/** \brief Enter the thread runner.
+ *
+ * This function signals that the thread runner is about to be entered.
+ * This is often used as an initialization function.
+ *
+ * If the runner::enter() function raises an std::exception, then the
+ * function saves that exception for the thread owner, emits a log,
+ * and returns false.
+ *
+ * \note
+ * The log is not emitted if set_log_all_exceptions() was called with false.
+ *
+ * \return true if the runner::enter() function returned as expected.
+ */
+bool thread::internal_enter()
+{
+    try
+    {
+        f_runner->enter();
+        return true;
+    }
+    catch(std::exception const & e)
+    {
+        // keep a copy of the exception
+        //
+        f_exception = std::current_exception();
+
+        if(f_log_all_exceptions)
+        {
+            log << log_level_t::fatal
+                << "thread internal_enter() got exception: \""
+                << e.what()
+                << "\", exiting thread now."
+                << end;
+        }
+    }
+
+    return false;
+}
+
+
+/** \brief Execute the run() function.
+ *
+ * This function specifically calls the run() function in an exception
+ * safe manner.
+ *
+ * If no exception occurs, the function returns true meaning that everything
+ * worked as expected.
+ *
+ * When an std::exception occurs, the function returns false after saving
+ * the exception so it can be reported to this thread owner. (i.e. it gets
+ * re-thrown whenever the thread owner joins with the thread).
+ *
+ * The std::exception can be logged by calling the set_log_all_exceptions()
+ * function with true, which is the default (i.e. don't call it with false
+ * if you want to get the logs).
+ *
+ * Other exceptions are ignored (they will be caught by the internal_thread()
+ * function).
+ */
+bool thread::internal_run()
+{
+    try
+    {
+        f_runner->run();
+        return true;
+    }
+    catch(std::exception const & e)
+    {
+        // keep a copy of the exception
+        //
+        f_exception = std::current_exception();
+
+        if(f_log_all_exceptions)
+        {
+            log << log_level_t::fatal
+                << "thread internal_run() got exception: \""
+                << e.what()
+                << "\", exiting thread now."
+                << end;
+        }
+
+        return false;
+    }
+}
+
+
+/** \brief Function called when leaving the thread runner.
+ *
+ * Whenever the thread runner leaves, we want to send a signal to the
+ * runner owner through the runner::leave() function. This is the thread
+ * function which makes sure that the runner::leave() function get called.
+ *
+ * The function is called with a status which tells us what failed (i.e.
+ * the reason for the call).
+ *
+ * The function is std::exception safe. Unknown exceptions are ignored here
+ * since they will be caught by the internal_thread() function.
+ *
+ * std::exceptions are reported and either ignored (another exception occurred
+ * earlier) or reported back to the thread owner after the owner joins with
+ * the thread.
+ *
+ * \param[in] status  The status when the internal_leave() function gets called.
+ */
+void thread::internal_leave(leave_status_t status)
+{
+    try
+    {
+        f_runner->leave(status);
+    }
+    catch(std::exception const & e)
+    {
+        // keep the first exception (i.e. internal_enter() or internal_run()
+        // have priority on this one)
+        //
+        if(f_exception == std::exception_ptr())
+        {
+            f_exception = std::current_exception();
+        }
+
+        log << log_level_t::fatal
+            << "thread internal_leave() got exception: \""
+            << e.what()
+            << "\", exiting thread now."
+            << end;
     }
 }
 
