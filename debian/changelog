@@ -1,9 +1,11 @@
-cppthread (1.0.9.0~bionic) bionic; urgency=high
+cppthread (1.0.9.1~bionic) bionic; urgency=high
 
   * Enhanced the documentation.
   * Moved a return statement to the end of the function.
   * Release the exception when rethrowing.
   * Give end user access to the exception saved in the thread.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 15 Mar 2021 21:15:54 -0700
 
 cppthread (1.0.8.0~bionic) bionic; urgency=high
 
