@@ -73,6 +73,7 @@ public:
     mutex &                     get_thread_mutex() const;
     void                        set_log_all_exceptions(bool log_all_exceptions);
     bool                        get_log_all_exceptions() const;
+    std::exception_ptr          get_exception() const;
 
 private:
     // internal function to start the runner

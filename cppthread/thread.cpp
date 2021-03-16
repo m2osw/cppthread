@@ -235,10 +235,10 @@ bool thread::is_stopping() const
  * way the function signature matches the signature the pthread_create()
  * function expects.
  *
- * \param[in] thread  The thread pointer.
+ * \param[in] system_thread  The thread pointer.
  *
- * \return We return a null pointer, which we do not use because we do
- *         not call the pthread_join() function.
+ * \return We return a null pointer, which we do not use because we expect
+ *         uses to pass results in a different way (i.e. using the fifo).
  */
 void * func_internal_start(void * system_thread)
 {
@@ -424,9 +424,9 @@ bool thread::internal_run()
                 << "\", exiting thread now."
                 << end;
         }
-
-        return false;
     }
+
+    return false;
 }
 
 
@@ -542,7 +542,9 @@ bool thread::start()
  *
  * \warning
  * This function throws the thread exceptions that weren't caught in your
- * run() function. This happens after the thread has completed.
+ * run() function. This happens after the thread has completed. The exception
+ * is then removed from the thread (i.e. it won't re-throw a second time
+ * and a call to get_exception() returns a null pointer).
  */
 void thread::stop()
 {
@@ -584,10 +586,13 @@ void thread::stop()
     f_stopping = false;
 
     // if the child died because of a standard exception, rethrow it now
+    // and "lose it" at the same time
     //
     if(f_exception != std::exception_ptr())
     {
-        std::rethrow_exception(f_exception);
+        std::exception_ptr e;
+        e.swap(f_exception);
+        std::rethrow_exception(e);
     }
 }
 
@@ -681,6 +686,38 @@ void thread::set_log_all_exceptions(bool log_all_exceptions)
 bool thread::get_log_all_exceptions() const
 {
     return f_log_all_exceptions;
+}
+
+
+/** \brief Get the exception pointer.
+ *
+ * When the thread runner raises an exception, it gets saved in the
+ * thread object. That exception can be retrieved using this get_exception()
+ * function.
+ *
+ * If no exception occurred, then this pointer will be the nullptr. If
+ * an exception did occur, then it will be a pointer to that exception.
+ * It can be rethrown inside a try/catch in order to handle it.
+ *
+ * \code
+ *     std::exception_ptr e(my_thread->get_exception());
+ *     if(e != std::exception_ptr())
+ *     {
+ *         try
+ *         {
+ *             e->rethrow_exception();
+ *         }
+ *         catch(std::exception const & e)
+ *         {
+ *             std::cerr << "exception occurred: " << e.what() << std::endl;
+ *         }
+ *     }
+ * \endcode
+ */
+std::exception_ptr thread::get_exception() const
+{
+    guard lock(f_mutex);
+    return f_exception;
 }
 
 

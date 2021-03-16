@@ -77,6 +77,21 @@ So beside the order in which you declare the thread and runner, the only
 other rule is to test the `continue_running()` flag if your thread is
 of the kind "running forever" and you have a very safe environment.
 
+**WARNING:** If you want to create a class which derives from cppthread,
+it can't own the runner. So a class like this is ill formed:
+
+    class my_super_thread
+        : cppthread::thread
+    {
+    ...
+    private:
+        cppthread::runner::pointer_t   f_my_runner;
+    };
+
+Your class is going to call the destructor of the runner before the one
+from the thread. So again, that would destroy an object still in use (while
+the thread is still running). This is exactly why we do not have the runner
+defined in our cppthread::thread class.
 
 # Inter-thread Messages
 
