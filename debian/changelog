@@ -1,3 +1,11 @@
+cppthread (1.1.0.0~bionic) bionic; urgency=high
+
+  * Adding a pre-call to a log message to avoid a potential deadlock.
+  * Bump version to 1.1 since I changed the interface (should have changed
+    that since v1.0.8.0).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 16 Mar 2021 19:52:49 -0700
+
 cppthread (1.0.9.1~bionic) bionic; urgency=high
 
   * Enhanced the documentation.

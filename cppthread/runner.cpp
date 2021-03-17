@@ -170,9 +170,14 @@ bool runner::continue_running() const
  */
 void runner::enter()
 {
+    // there is a mutex lock in the get_thread_tid() so try to avoid a
+    // potential deadlock by getting the value ahead
+    //
+    pid_t const tid(f_thread->get_thread_tid());
+
     log << log_level_t::info
         << "entering thread #"
-        << f_thread->get_thread_tid()
+        << tid
         << "."
         << end;
 }
@@ -211,9 +216,14 @@ void runner::enter()
  */
 void runner::leave(leave_status_t status)
 {
+    // there is a mutex lock in the get_thread_tid() so try to avoid a
+    // potential deadlock by getting the value ahead
+    //
+    pid_t const tid(f_thread->get_thread_tid());
+
     log << log_level_t::info
         << "leaving thread #"
-        << f_thread->get_thread_tid()
+        << tid
         << " with status "
         << static_cast<int>(status)     // TODO: write name too
         << "."
