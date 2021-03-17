@@ -707,8 +707,30 @@ void mutex::broadcast()
  */
 mutex *         g_system_mutex = nullptr;
 
+
+/** \brief This is an internal function called by the logger constructor.
+ *
+ * The logger constructor is called whenever the cppthread library is loaded
+ * and that happens in your main thread at initialization time. This means
+ * any of your code can access the g_system_mutex as required.
+ *
+ * This function is not defined externally so that other users can't call
+ * it from the outside (there would be no need anyway). Just in case, if
+ * called a second time, the function writes an error message and fails
+ * with a call to std::terminate().
+ *
+ * \note
+ * Although this function gets called from the logger contructor, it is not
+ * used by the logger at all.
+ */
 void create_system_mutex()
 {
+    if(g_system_mutex != nullptr)
+    {
+        std::cerr << "fatal: create_system_mutex() called twice." << std::endl;
+        std::terminate();
+    }
+
     g_system_mutex = new mutex;
 }
 

@@ -268,7 +268,6 @@ void logger::lock()
         std::cerr << "fatal: a mutex unlock generated error #"
                   << err
                   << std::endl;
-        pthread_mutex_unlock(&g_log_mutex);
         std::terminate();
     }
 
@@ -282,7 +281,6 @@ void logger::lock()
         std::cerr << "fatal: a mutex lock generated error #"
                   << err
                   << std::endl;
-        pthread_mutex_unlock(&g_log_mutex);
         std::terminate();
     }
 
@@ -294,7 +292,6 @@ void logger::lock()
             std::cerr << "fatal: a mutex unlock generated error #"
                       << err
                       << std::endl;
-            pthread_mutex_unlock(&g_log_mutex);
             std::terminate();
         }
     }
@@ -308,7 +305,7 @@ void logger::lock()
 /** \brief Unlock the logger once we are done with it.
  *
  * Whenever the end() function gets called, the logger reacts by sending
- * that message to the used defined callback or to std::cerr.
+ * the collected message to the user defined callback or to std::cerr.
  *
  * Note that the number of calls to the lock are not limited. However,
  * the unlock() function is called only once in the end() function.
@@ -327,13 +324,13 @@ void logger::unlock()
 
     g_log_locked = false;
 
-    int err(pthread_mutex_unlock(&g_log_mutex));
+    int err(pthread_mutex_unlock(&g_log_recursive_mutex));
     if(err != 0)
     {
         std::cerr << "fatal: a mutex unlock generated error #"
                   << err
                   << std::endl;
-        pthread_mutex_unlock(&g_log_mutex);
+        pthread_mutex_unlock(&g_log_recursive_mutex);
         std::terminate();
     }
 }
@@ -412,7 +409,7 @@ logger & logger::operator << (logger & (*func)(logger &))
  */
 logger & logger::end()
 {
-    // the std::cerr requires a lock
+    // the std::cerr requires a lock so we keep the logger locked
     //
     try
     {
