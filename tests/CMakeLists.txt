@@ -1,36 +1,30 @@
+# Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
 #
-# Description:
-#       Definitions to create all the unit tests of the cppthread library.
+# https://snapwebsites.org/project/cppthread
+# contact@m2osw.com
 #
-# License:
-#       Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#       https://sourceforge.net/projects/unigw/
-#       contact@m2osw.com
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 2 of the License, or
-#       (at your option) any later version.
-#
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
-#
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 ##
 ## cppthread unittest
 ##
 project(unittest)
 
-find_package( Catch2 )
+find_package(Catch2)
 
-if( Catch2_FOUND )
+if(Catch2_FOUND)
 
     add_definitions(
         -DCATCH_CONFIG_PREFIX_ALL
@@ -43,23 +37,24 @@ if( Catch2_FOUND )
         ${LIBEXCEPT_INCLUDE_DIRS}
     )
 
-    add_executable( ${PROJECT_NAME}
+    add_executable(${PROJECT_NAME}
         main.cpp
 
         example.cpp
+        fifo.cpp
         version.cpp
     )
 
-    target_link_libraries( ${PROJECT_NAME}
+    target_link_libraries(${PROJECT_NAME}
         cppthread
     )
 
     add_test( unittests ${PROJECT_NAME} )
 
-else( Catch2_FOUND )
+else(Catch2_FOUND)
 
     message("snapcatch2 not found... no test will be built.")
 
-endif( Catch2_FOUND )
+endif(Catch2_FOUND)
 
 # vim: ts=4 sw=4 et

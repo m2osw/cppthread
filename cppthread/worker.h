@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #pragma once
 
 /** \file
@@ -42,7 +44,7 @@ public:
     typedef T       work_load_type;
 
     worker<T>(std::string const & name
-            , size_t position
+            , std::size_t position
             , typename fifo<T>::pointer_t in
             , typename fifo<T>::pointer_t out)
         : runner(name)
@@ -50,12 +52,16 @@ public:
         , f_out(out)
         , f_position(position)
     {
+        if(f_in == nullptr)
+        {
+            throw cppthread_invalid_error("a worker object must be given a valid input FIFO");
+        }
     }
 
     worker<T>(worker const & rhs) = delete;
     worker<T> & operator = (worker<T> const & rhs) = delete;
 
-    size_t position() const
+    std::size_t position() const
     {
         return f_position;
     }
@@ -97,7 +103,10 @@ public:
                     //
                     if(do_work())
                     {
-                        f_out->push_back(f_workload);
+                        if(f_out != nullptr)
+                        {
+                            f_out->push_back(f_workload);
+                        }
                     }
 
                     {
@@ -122,14 +131,14 @@ public:
     virtual bool do_work() = 0;
 
 protected:
-    T                       f_workload = T();
+    T                           f_workload = T();
     typename fifo<T>::pointer_t f_in;
     typename fifo<T>::pointer_t f_out;
 
 private:
-    size_t const            f_position;
-    bool                    f_working = false;
-    size_t                  f_runs = 0;
+    std::size_t const           f_position;
+    bool                        f_working = false;
+    std::size_t                 f_runs = 0;
 };
 
 

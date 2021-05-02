@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Documentation of the fifo.h file.
@@ -89,20 +91,7 @@ namespace cppthread
  * the push_front() function can be processed in any order.
  */
 
-/** \class pool::worker_thread_t
- * \brief Class used to manage the worker and worker thread.
- *
- * This class creates a worker thread, it adds it to a thread,
- * and it starts the thread. It is here so we have a single list
- * of _worker threads_.
- *
- * \note
- * I had to allocate a cppthread object because at this point
- * the cppthread is not yet fully defined so it would not take
- * it otherwise. It certainly would be possible to move this
- * declaration and those depending on it to avoid this problem,
- * though.
- */
+
 
 /** \fn pool::pool(std::string const & name , size_t pool_size , typename worker_fifo_t::pointer_t in , typename worker_fifo_t::pointer_t out , A... args)
  * \brief Initializes a pool of worker threads.
@@ -189,7 +178,7 @@ namespace cppthread
  */
 
 
-/** \fn push_back(work_load_type const & v)
+/** \fn pool::push_back(work_load_type const & v)
  * \brief Push one work load of data.
  *
  * This function adds a work load of data to the input. One of the
@@ -202,7 +191,7 @@ namespace cppthread
  */
 
 
-/** \fn pop_front(work_load_type & v, int64_t usecs)
+/** \fn pool::pop_front(work_load_type & v, int64_t usecs)
  * \brief Retrieve one work load of processed data.
  *
  * This function retrieves one T object from the output FIFO.
@@ -219,6 +208,10 @@ namespace cppthread
  * can still be called until the out queue is emptied. The proper
  * sequence is to 
  *
+ * \note
+ * The output fifo pointer can be set to nullptr. In that case,
+ * this function always returns false.
+ *
  * \param[in] v  A reference where the object gets copied.
  * \param[in] usecs  The number of microseconds to wait.
  *
@@ -228,7 +221,7 @@ namespace cppthread
  */
 
 
-/** \fn stop(bool immediate)
+/** \fn pool::stop(bool immediate)
  * \brief Stop the threads.
  *
  * This function is called to ask all the threads to stop.
@@ -262,7 +255,7 @@ namespace cppthread
  */
 
 
-/** \fn wait()
+/** \fn pool::wait()
  * \brief Wait on the threads to be done.
  *
  * This function waits on all the worker threads until they all
@@ -323,6 +316,183 @@ namespace cppthread
  *
  * \attention
  * This function can't be called from one of the workers.
+ */
+
+
+/** \typedef pool::pointer_t
+ * \brief A shared pointer for your pools.
+ *
+ * We expect people to use pools as is in their objects, but if you'd like
+ * to allocate a pool, we recommand that you use the std::make_shared<>()
+ * function and create a shared pointer.
+ */
+
+
+/** \typedef pool::work_load_type
+ * \brief The type of the workload item.
+ *
+ * Items that we add to the input and output FIFOs must be of that type.
+ *
+ * The push_back() and pop_front() functions make use of items of this
+ * type to add items to the input fifo and pop items from the output
+ * fifo.
+ *
+ * Note that the output fifo can be set to a null pointer. In that case
+ * the pop function cannot be used.
+ */
+
+
+/** \typedef pool::worker_fifo_t
+ * \brief This type represents the type of the fifo used by the pool.
+ *
+ * The pool needs to accept incoming and outgoing items. These are
+ * added to an input and an output fifo. The workload is compatible
+ * with those FIFOs.
+ */
+
+
+/** \typedef pool::workers_t
+ * \brief Vector of workers.
+ *
+ * This type is used internally to hold all the worker threads.
+ */
+
+
+/** \var pool::f_name
+ * \brief The name of this pool of threads.
+ *
+ * You can give your pools a name so that way they can easily be tracked
+ * in your debug process. The name is not otherwise used internally.
+ */
+
+
+/** \var pool::f_in
+ * \brief The input FIFO.
+ *
+ * This FIFO is where work for the thread workers managed by the pool object
+ * are saved until a thread is available to process them.
+ *
+ * The input FIFO must be a valid pointer to a fifo object.
+ */
+
+
+/** \var pool::f_out
+ * \brief The output FIFO.
+ *
+ * A pointer to a FIFO to output the resulting workloads. This pointer may
+ * be nullptr.
+ */
+
+
+/** \var pool::f_workers
+ * \brief The vector of workers.
+ *
+ * The pool manages a set of workers saved in a vector. This variable holds
+ * these workers.
+ */
+
+
+
+
+
+/** \class pool::worker_thread_t
+ * \brief Class used to manage the worker and worker thread.
+ *
+ * This class creates a worker thread, it adds it to a thread,
+ * and it starts the thread. It is here so we have a single list
+ * of _worker threads_.
+ *
+ * \note
+ * I had to allocate a cppthread object because at this point
+ * the cppthread is not yet fully defined so it would not take
+ * it otherwise. It certainly would be possible to move this
+ * declaration and those depending on it to avoid this problem,
+ * though.
+ */
+
+
+/** \typedef pool::worker_thread_t::pointer_t
+ * \brief The shared pointer type to a worker thread.
+ *
+ * When the pool creates worker threads, it allocates them as shared pointers
+ * and saves them in a vector.
+ *
+ * \sa pool::worker_thread_t::vector_t
+ */
+
+
+/** \typedef pool::worker_thread_t::vector_t
+ * \brief The vector of shared pointers.
+ *
+ * When you create a pool of worker threads, it creates a set of threads
+ * that it saves in a vector of this type. The pointers to the threads
+ * are shared pointers.
+ */
+
+
+/** \fn pool::worker_thread_t::worker_thread_t(std::string const & name, std::size_t i, typename worker_fifo_t::pointer_t in, typename worker_fifo_t::pointer_t out, A... args)
+ * \brief The constructor of a worker thread.
+ *
+ * A worker thread is a thread and a runner manager.
+ *
+ * The name is used by the thread. For the worker, we append " (worker #...)"
+ * to the name and assign that to the worker. This way, we can distinguish
+ * each worker properly.
+ *
+ * The \p i parameter is the index representing the worker number. It has
+ * no special anything otherwise.
+ *
+ * The input fifo (\p in) must be defined on construction. It gets passed
+ * to all the workers so they all can wait for new workload messages.
+ *
+ * The output fifo (\p out) is optional. If you use the item_with_predicate
+ * with actual predicates, remember that a workload needs to be released
+ * for the predicate to become true. Adding them to another fifo may
+ * prevent this pool from processing additional workloads for long periods
+ * of time.
+ *
+ * \param[in] name  The name of the thread and worker.
+ * \param[in] i  The index of this worker thread.
+ * \param[in] in  The input fifo where workloads are sent.
+ * \param[in] out  The output fifo where workloads are forwarded once worked
+ * on. This parameter is optional (you can use a nullptr.
+ * \param[in] args  Additional arguments to construct the worker threads
+ * runners (as per your type W).
+ */
+
+
+/** \fn pool::worker_thread_t::get_worker()
+ * \brief Retrieve a pointer to the working in this worker thread.
+ *
+ * This function is used to access the worker of the worker_thread_t object.
+ *
+ * \return A pointer to the worker thread.
+ */
+
+
+/** \fn pool::worker_thread_t::get_worker() const
+ * \brief Retrieve the worker when the worker thread is constant.
+ *
+ * This function is used to access the worker of the worker_thread_t object.
+ *
+ * \return A pointer to the worker thread.
+ */
+
+
+/** \var pool::worker_thread_t::f_worker
+ * \brief The worker, which is a runner.
+ *
+ * The work is a runner of the type you decide through W. It gets initialized
+ * and started when you create the pool. It immediately listens on the
+ * input fifo which can already have workload items as required.
+ */
+
+
+/** \var pool::worker_thread_t::f_thread
+ * \brief The thread which manages the worker.
+ *
+ * This object is a thread used to manage the corresponding worker
+ * thread which is the operating system thread.
  */
 
 

@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #pragma once
 
 /** \file
@@ -36,6 +38,7 @@ namespace cppthread
 DECLARE_LOGIC_ERROR(cppthread_logic_error);
 
 DECLARE_MAIN_EXCEPTION(cppthread_exception);
+DECLARE_OUT_OF_RANGE(cppthread_out_of_range);
 
 DECLARE_EXCEPTION(cppthread_exception, cppthread_not_started);
 DECLARE_EXCEPTION(cppthread_exception, cppthread_in_use_error);

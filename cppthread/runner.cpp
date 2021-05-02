@@ -1,5 +1,7 @@
 // Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Implementation of the Thread Runner and Managers.
@@ -161,7 +163,7 @@ bool runner::continue_running() const
  * or waiting on a different thread, then you would have no idea that the
  * thread is ending.
  *
- * \important
+ * \attention
  * The enter() will always be called, but the run() and leave() functions
  * do not get called if a preceeding call ends in an abnormal manner (i.e.
  * such as emitting an abort() call, a SEGV, etc.) Exceptions are properly
@@ -265,7 +267,7 @@ pid_t runner::gettid() const
 /** \class runner
  * \brief The runner is the class that wraps the actual system thread.
  *
- * This class defines the actuall thread wrapper. This is very important
+ * This class defines the actual thread wrapper. This is very important
  * because when the main thread object gets destroyed and if it
  * were a system thread, the virtual tables would be destroyed and thus
  * invalid before you reached the ~thread() destructor. This means
@@ -308,6 +310,15 @@ pid_t runner::gettid() const
  */
 
 
+/** \enum leave_status_t
+ * \brief The exit status.
+ *
+ * When the runner exits, the run() function saves the status of how the
+ * function exited. It can be useful to know how the run() function exited
+ * to decide on how to react.
+ */
+
+
 /** \var runner::f_mutex
  * \brief The mutex of this thread.
  *
@@ -347,6 +358,28 @@ pid_t runner::gettid() const
  */
 
 
+/** \fn runner::runner(runner const & rhs);
+ * \brief The copy operator is deleted.
+ *
+ * A runner represents a running thread which is pretty much impossible to
+ * copy so we prevent such of the class too.
+ *
+ * \param[in] rhs  The right hand side.
+ */
+
+
+/** \fn runner::operator = (runner const & rhs);
+ * \brief This assignment operator is deleted.
+ *
+ * A runner represents a running thread which is pretty much impossible to
+ * copy so we prevent such of the class too.
+ *
+ * \param[in] rhs  The right hand side.
+ *
+ * \return A reference to this object.
+ */
+
+
 /** \fn runner::run();
  * \brief This virtual function represents the code run by the thread.
  *
@@ -355,6 +388,8 @@ pid_t runner::gettid() const
  *
  * To exit the thread, simply return from the run() function.
  */
+
+
 
 
 } // namespace cppthread

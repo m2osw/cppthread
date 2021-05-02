@@ -4,37 +4,42 @@
 # This will work if you built the environment using our ~/bin/build-snap script
 
 PROCESSORS=`nproc`
+BUILDDIR=../../../BUILD/contrib/cppthread
+
+# "Brief Version" -- for the documentation
+VERSION=`dpkg-parsechangelog --show-field Version | sed -e 's/~.*//' -e 's/\(^[0-9]\+\.[0-9]\+\).*/\1/'`
+
 
 case $1 in
 "-l")
-	make -C ../../../BUILD/contrib/cppthread 2>&1 | less -SR
+	make -C ${BUILDDIR} 2>&1 | less -SR
 	;;
 
 "-d")
-	rm -rf ../../../BUILD/contrib/cppthread/doc/cppthread-doc-1.0.tar.gz
-	make -C ../../../BUILD/contrib/cppthread
+	rm -rf ${BUILDDIR}/doc/cppthread-doc-${VERSION}.tar.gz
+	make -C ${BUILDDIR}
 	;;
 
 "-i")
-	make -j${PROCESSORS} -C ../../../BUILD/contrib/cppthread install
+	make -j${PROCESSORS} -C ${BUILDDIR} install
 	;;
 
 "-t")
 	(
-		if make -j${PROCESSORS} -C ../../../BUILD/contrib/cppthread
+		if make -j${PROCESSORS} -C ${BUILDDIR}
 		then
 			shift
-			../../../BUILD/contrib/cppthread/tests/unittest --progress $*
+			${BUILDDIR}/tests/unittest --progress $*
 		fi
 	) 2>&1 | less -SR
 	;;
 
 "-r")
-	make -j${PROCESSORS} -C ../../../RELEASE/contrib/cppthread
+	make -j${PROCESSORS} -C ${BUILDDIR}
 	;;
 
 "")
-	make -j${PROCESSORS} -C ../../../BUILD/contrib/cppthread
+	make -j${PROCESSORS} -C ${BUILDDIR}
 	;;
 
 *)

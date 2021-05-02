@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #pragma once
 
 /** \file
@@ -33,6 +35,11 @@
 #include    "cppthread/mutex.h"
 
 
+// snapdev lib
+//
+#include    <snapdev/not_used.h>
+
+
 // C++ lib
 //
 #include    <numeric>
@@ -50,7 +57,119 @@ class fifo
     : public mutex
 {
 private:
-    typedef std::queue<T>   items_t;
+    typedef std::deque<T>   items_t;
+
+
+    // the following templates are used to know whether class T has a
+    // valid_workload() function returning a bool and if so, we'll use
+    // it to know whether an item is ready to be popped.
+    //
+    template<typename, typename, typename = std::void_t<>>
+        struct item_has_predicate
+            : public std::false_type
+    {
+    };
+
+    template<typename C, typename R, typename... A>
+        struct item_has_predicate<C, R(A...),
+                std::void_t<decltype(std::declval<C>().valid_workload(std::declval<A>()...))>>
+            : public std::is_same<decltype(std::declval<C>().valid_workload(std::declval<A>()...)), R>
+    {
+    };
+
+    template<typename C>
+        struct is_shared_ptr
+            : std::false_type
+    {
+    };
+
+    template<typename C>
+        struct is_shared_ptr<std::shared_ptr<C>>
+            : std::true_type
+    {
+    };
+
+    /** \brief Validate item.
+     *
+     * This function checks whether the T::valid_workload() function
+     * says the item can be processed now or not.
+     *
+     * In this case, the class C is not a shared pointer.
+     *
+     * \tparam C  The type of the item.
+     * \param[in] item  The item to verify.
+     *
+     * \return true if the valid_workload() returns true, false otherwise.
+     */
+    template<typename C>
+    typename std::enable_if<!is_shared_ptr<C>::value
+                        && item_has_predicate<C, bool()>::value
+                , bool>::type
+        validate_item(C const & item)
+    {
+        return item.valid_workload();
+    }
+
+    /** \brief Validate item.
+     *
+     * This function always returns true. It is used when the item does
+     * not have a valid_workload() function defined.
+     *
+     * \tparam C  The type of the item.
+     * \param[in] item  The item to verify.
+     *
+     * \return Always true.
+     */
+    template<typename C>
+    typename std::enable_if<!is_shared_ptr<C>::value
+                         && !item_has_predicate<C, bool()>::value
+                , bool>::type
+        validate_item(C const & item)
+    {
+        snap::NOTUSED(item);
+        return true;
+    }
+
+    /** \brief Validate item.
+     *
+     * This function checks whether the T::valid_workload() function
+     * says the item can be processed now or not.
+     *
+     * In this case, the class C is a shared pointer to an item T.
+     *
+     * \tparam C  The type of the item.
+     * \param[in] item  The item to verify.
+     *
+     * \return Always true.
+     */
+    template<typename C>
+    typename std::enable_if<is_shared_ptr<C>::value
+                        && item_has_predicate<typename C::element_type, bool()>::value
+                , bool>::type
+        validate_item(C const & item)
+    {
+        return item->valid_workload();
+    }
+
+    /** \brief Validate item.
+     *
+     * This function always returns true. It is used when the item is a
+     * shared pointer and does not have a valid_workload() function defined.
+     *
+     * \tparam C  The type of the item.
+     * \param[in] item  The item to verify.
+     *
+     * \return Always true.
+     */
+    template<typename C>
+    typename std::enable_if<is_shared_ptr<C>::value
+                         && !item_has_predicate<typename C::element_type, bool()>::value
+                , bool>::type
+        validate_item(C const & item)
+    {
+        snap::NOTUSED(item);
+        return true;
+    }
 
 public:
     typedef T                               value_type;
@@ -64,7 +183,7 @@ public:
         {
             return false;
         }
-        f_queue.push(v);
+        f_queue.push_back(v);
         signal();
         return true;
     }
@@ -72,9 +191,42 @@ public:
     bool pop_front(T & v, int64_t const usecs)
     {
         guard lock(*this);
-        if(!f_done && f_queue.empty())
+
+        auto cleanup = [&]()
+            {
+                if(f_done && !f_broadcast && f_queue.empty())
+                {
+                    // make sure all the threads wake up on this new
+                    // "queue is empty" status
+                    //
+                    broadcast();
+                    f_broadcast = true;
+                }
+            };
+
+        for(;;)
         {
-            // when empty wait a bit if possible and try again
+            // search for an item we can pop now
+            //
+            for(auto it(f_queue.begin()); it != f_queue.end(); ++it)
+            {
+                bool const result(validate_item<T>(*it));
+                if(result)
+                {
+                    v = *it;
+                    f_queue.erase(it);
+                    cleanup();
+                    return true;
+                }
+            }
+
+            if(f_done)
+            {
+                break;
+            }
+
+            // when no items can be returned, wait a bit if possible
+            // and try again
             //
             if(usecs == -1)
             {
@@ -86,22 +238,15 @@ public:
             {
                 timed_wait(usecs);
             }
+            else // if(usecs == 0)
+            {
+                // do not wait
+                //
+                break;
+            }
         }
-        bool const result(!f_queue.empty());
-        if(result)
-        {
-            v = f_queue.front();
-            f_queue.pop();
-        }
-        if(f_done && !f_broadcast && f_queue.empty())
-        {
-            // make sure all the threads wake up on this new
-            // "queue is empty" status
-            //
-            broadcast();
-            f_broadcast = true;
-        }
-        return result;
+        cleanup();
+        return false;
     }
 
     void clear()

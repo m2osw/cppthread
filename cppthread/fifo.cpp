@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,14 +13,19 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Documentation of the fifo.h file.
  *
  * The fifo.h file is a template so we document that template here.
+ *
+ * The FIFO  is used to push items and pop them as in a FIFO
+ * (i.e. first in first out). The newer version of our FIFO
+ * has the ability to pop only items that can be popped which
+ * allows for better parallelism with a pool of threads.
  */
 
 #error "Documentation only file, do not compile."
@@ -45,7 +52,7 @@ namespace cppthread
  * \endcode
  *
  * \note
- * It is recommanded that you use a smart pointer to your data as
+ * It is recommended that you use a smart pointer to your data as
  * the type T. This way you do not have to deal with copies in these
  * FIFOs. However, if your data is very small (a few integers, a
  * small string or two) then you may also use a type T which will
@@ -86,6 +93,23 @@ namespace cppthread
  * that B is done before destroying A.
  */
 
+
+/** \fn fifo::validate_item(C const & item)
+ * \brief Validate a fifo item.
+ *
+ * The validate_item() checks whether the \p item can be returned by
+ * the pop_front() function or not.
+ */
+
+
+/** \fn fifo::validate_item(C const & item)
+ * \brief Validate a fifo item.
+ *
+ * The validate_item() checks whether the \p item can be returned by
+ * the pop_front() function or not.
+ */
+
+
 /** \fn fifo::push_back(T const & v)
  * \brief Push data on this FIFO.
  *
@@ -114,6 +138,7 @@ namespace cppthread
  *
  * \sa done()
  */
+
 
 /** \fn fifo::pop_front(T & v, int64_t const usecs)
  * \brief Retrieve one value from the FIFO.

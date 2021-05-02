@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,16 +13,16 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief The version of the cppthread at compile time.
  *
  * This file records the cppthread library version at compile time.
  *
- * The `#define` give you the library version at the time you are compiling.
+ * The `&#35;define` give you the library version at the time you are compiling.
  * The functions allow you to retrieve the version of a dynamically linked
  * library.
  */
@@ -38,6 +40,34 @@
 
 namespace cppthread
 {
+
+/** \def CPPTHREAD_VERSION_MAJOR
+ * \brief The major version of the cppthread library.
+ *
+ * The major version at compile time.
+ */
+
+
+/** \def CPPTHREAD_VERSION_MINOR
+ * \brief The minor version of the cppthread library.
+ *
+ * The minor version at compile time.
+ */
+
+
+/** \def CPPTHREAD_VERSION_PATCH
+ * \brief The patch version of the cppthread library.
+ *
+ * The patch version at compile time.
+ */
+
+
+/** \def CPPTHREAD_VERSION_STRING
+ * \brief The version as a string.
+ *
+ * The version at compile time as a string.
+ */
+
 
 
 

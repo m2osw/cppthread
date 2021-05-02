@@ -1,5 +1,7 @@
 // Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #pragma once
 
 /** \file
@@ -83,6 +85,13 @@ protected:
     mutable mutex       f_mutex = mutex();
 
 private:
+    /** \brief Give access to the f_thread field.
+     *
+     * This definition allows the thread to access the f_thread field in the
+     * runner. This allows the thread objects to know whether the runner is
+     * currently assigned to a thread or not. One runner cannot be assigned
+     * to more than one thread at a time.
+     */
     friend class thread;
 
     thread *            f_thread = nullptr;

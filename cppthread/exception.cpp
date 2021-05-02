@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Documentation of the exception.h file.
@@ -56,7 +58,7 @@ namespace cppthread
 /** \class cppthread_exception_not_locked_error
  * \brief A mutex cannot be unlocked if not locked.
  *
- * Each time we lock a mutex, we increase a counter. Each time we nulock a
+ * Each time we lock a mutex, we increase a counter. Each time we unlock a
  * mutex we decrease a counter. If you try to unlock when the counter is
  * zero, you have a lock/unlock discrepancy. This exception is raised
  * when such is discovered.

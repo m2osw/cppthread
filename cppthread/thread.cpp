@@ -1,5 +1,7 @@
 // Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Implementation of the Thread Runner and Managers.
@@ -88,7 +90,7 @@ thread::thread(std::string const & name, runner * runner)
     }
     if(f_runner->f_thread != nullptr)
     {
-        throw cppthread_in_use_error("this runner (" + name + ") is already is use");
+        throw cppthread_in_use_error("this runner (" + name + ") is already in use");
     }
 
     int err(pthread_attr_init(&f_thread_attr));
@@ -402,6 +404,9 @@ bool thread::internal_enter()
  *
  * Other exceptions are ignored (they will be caught by the internal_thread()
  * function).
+ *
+ * \return true if the run worked as expected; false if an exception was
+ * caught.
  */
 bool thread::internal_run()
 {
@@ -533,7 +538,7 @@ bool thread::start()
 /** \brief Stop the thread.
  *
  * This function requests the thread to stop. Note that the function does
- * not actually forcebly stop the thread. It only turns on a flag (namely
+ * not actually forcibly stop the thread. It only turns on a flag (namely
  * it makes the is_stopping() function return true) meaning that the
  * thread should stop as soon as possible. This gives the thread the
  * time necessary to do all necessary cleanup before quitting.
@@ -713,6 +718,8 @@ bool thread::get_log_all_exceptions() const
  *         }
  *     }
  * \endcode
+ *
+ * \return A pointer to a standard exception (std::exception).
  */
 std::exception_ptr thread::get_exception() const
 {
@@ -730,7 +737,7 @@ std::exception_ptr thread::get_exception() const
  * want to send a signal such as SIGUSR1 and SIGUSR2 to a thread so it
  * reacts one way or another (i.e. you are using poll() over a socket and
  * need to be stopped without using a possibly long time out, you can use
- * the signalfd() function to transform SIGUSR1 into a pollable signal.)
+ * the signalfd() function to transform SIGUSR1 into a poll-able signal.)
  *
  * \note
  * Obviously, if the thread is not running, nothing happens.
@@ -807,7 +814,7 @@ int get_total_number_of_processors()
  * (i.e. read/write from a hard drive or a socket.)
  *
  * \par
- * If your thread does really intesive work for a while (i.e. one thread
+ * If your thread does really intensive work for a while (i.e. one thread
  * working on one 4Mb image,) then the pool size should be limited to
  * one worker per CPU:
  *
@@ -909,7 +916,7 @@ process_ids_t get_thread_ids(pid_t pid)
 
 /** \brief Check whether a process is running or not.
  *
- * This function checks whether the /proc/<pid> directory exists. If so,
+ * This function checks whether the `/proc/<pid>` directory exists. If so,
  * that means that the process with \p pid is current running.
  *
  * \note
@@ -981,6 +988,30 @@ bool is_process_running(pid_t pid)
  */
 
 
+/** \fn thread::thread(thread const & rhs)
+ * \brief The copy operator is deleted.
+ *
+ * The thread object holds a pointer to a runner which is an OS thread.
+ * These would be really difficult to _copy_. Instead we prevent the
+ * operation altogether.
+ *
+ * \param[in] rhs  The right hand side.
+ */
+
+
+/** \fn thread::operator = (thread const & rhs)
+ * \brief The assignment operator is deleted.
+ *
+ * The thread object holds a pointer to a runner which is an OS thread.
+ * These would be really difficult to _assign_. Instead we prevent
+ * the operation altogether.
+ *
+ * \param[in] rhs  The right hand side.
+ *
+ * \return A reference to this object.
+ */
+
+
 /** \typedef thread::pointer_t
  * \brief The shared pointer for a thread object.
  *
@@ -1006,7 +1037,177 @@ bool is_process_running(pid_t pid)
  */
 
 
+/** \var thread::f_exception
+ * \brief An exception pointer.
+ *
+ * The exception pointer to the exception that was raised in the runner.
+ * By default this pointer is null.
+ *
+ * This pointer is reset back to a null pointer each time the start()
+ * is called.
+ *
+ * This exception must be caught by your function when calling the
+ * stop() function. If you don't catch these, then it will stop your
+ * process.
+ *
+ * \note
+ * Only standard exceptions can be caught in this way. You should
+ * derive all your exception from std::exception (or use the libexcept).
+ */
 
+
+/** \var thread::f_log_all_exceptions
+ * \brief Whether the runner exceptions should be logged or not.
+ *
+ * Whenever an exception occurs in a runner, the exception pointer is
+ * saved in the runner so it can be re-thrown after we join with that
+ * thread.
+ *
+ * The main problem here is that certain threads are not joined until
+ * we are done with an application. So the exception lingers and there
+ * is absolutely no trace of it, especially if you hit Ctlr-C to exit
+ * your software, the exception will 100% be lost.
+ *
+ * Instead, we have this flag to determine whether the exception should
+ * be logged at the time it gets caught instead of just saving it in
+ * the pointer. By default the flag is set to true which means we will
+ * log the exception immediately. This makes it easy to not forget.
+ *
+ * If you use threads to run a quick process and then return/join
+ * (i.e. stop()), then setting this flag to false is okay.
+ *
+ * \sa get_log_all_exceptions()
+ * \sa set_log_all_exceptions()
+ */
+
+
+/** \var thread::f_mutex
+ * \brief The thread mutex to guard various functions.
+ *
+ * The mutex is used whenever a variable that may be accessed by different
+ * threads is used. Especially, it makes sure that the variables do not
+ * get changed too early or too late (i.e. avoid race conditions).
+ *
+ * Also the mutex is used to send signals. For example, the thread waits
+ * on the runner to start. Once the runner is started, it signals the
+ * main thread which can then wake up and return as everything is now
+ * well defined.
+ */
+
+
+/** \var thread::f_name
+ * \brief The name of this thread.
+ *
+ * For debug purposes, you can give each one of your threads a different
+ * name. It gets saved in this string.
+ */
+
+
+/** \var thread::f_runner
+ * \brief The actual thread object.
+ *
+ * The runner is the object which holds the system thread and runs the
+ * commands. We have a separate object because that way we can make sure
+ * the runner destructor isn't called while the thread is still running.
+ * If that were to happen, then all the virtual functions would be
+ * invalid at that point and the system could crash.
+ *
+ * So the thread object holds a runner allowing the thread to be destroyed
+ * first, which calls the stop() function before the runner gets destroyed.
+ */
+
+
+/** \var thread::f_running
+ * \brief The thread is running.
+ *
+ * When the thread is running, this flag is set to true. The start()
+ * function sets this flag to true before starting the thread and the
+ * internal_run() function sets the flag back to false right before
+ * the thread exits.
+ *
+ * In other words, the flag is true early and false early. It's not
+ * a way to know whether the actual system thread is running or not.
+ */
+
+
+/** \var thread::f_started
+ * \brief The thread is started.
+ *
+ * The start() function returns only after the thread is started. To control
+ * that state, we use this flag. The caller will wait until the child
+ * thread is started (i.e. f_started is true).
+ */
+
+
+/** \var thread::f_stopping
+ * \brief The thread is currently in the stopping process.
+ *
+ * When the stop() function is called, the flag is set to true until after
+ * the caller joined with the thread.
+ *
+ * The is_stopping() function returns the current value of that field.
+ */
+
+
+/** \var thread::f_thread_attr
+ * \brief This thread attributes.
+ *
+ * When we create a thread we create attributes to assign to the thread
+ * on creation. These are the attributes.
+ *
+ * These are created once at the time the thread object is created and
+ * released when the object is destroyed. The same attributes are reused
+ * to re-start the thread over and over again (i.e. start() / stop()
+ * sequences).
+ */
+
+
+/** \var thread::f_thread_id
+ * \brief This thread identifier.
+ *
+ * Each thread is assigned a unique identifier by the C-library. This is
+ * that identifier. Under Linux, it is an IP address.
+ */
+
+
+/** \var thread::f_tid
+ * \brief This thread identifier.
+ *
+ * Each thread is assigned a unique identifier by the OS.
+ */
+
+
+
+/** \var PID_UNDEFINED
+ * \brief The value a PID variable is set to when not representing a process.
+ *
+ * In many cases we want to be able to initialize a pid_t variable with some
+ * default value. This variable is generally the best choice.
+ *
+ * \code
+ *     pid_t    f_my_process = PID_UNDEFINED;
+ * \endcode
+ */
+
+
+/** \var THREAD_UNDEFINED
+ * \brief An invalid thread identifier for initialization.
+ *
+ * In many cases we want to be able to initialize a pthread_t variable
+ * with some default value. This variable is generally the best choice.
+ *
+ * \code
+ *     pthread_t    f_my_thread = THREAD_UNDEFINED;
+ * \endcode
+ */
+
+
+/** \typedef process_ids_t
+ * \brief A list of identifiers representing various processes.
+ *
+ * This type defines a vector that can hold identifiers to various
+ * processes.
+ */
 
 
 

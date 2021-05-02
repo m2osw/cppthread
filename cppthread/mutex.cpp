@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Implementation of the Thread Runner and Managers.
@@ -54,12 +56,45 @@ namespace detail
 
 
 
+/** \brief The implementation of the mutex.
+ *
+ * We have an internal implementation of the mutex to avoid leaking the
+ * pthread library to the outside.
+ *
+ * The class holds a mutex and a condition which we use to wait in various
+ * circumstances such as when we pop items from a currently empty fifo.
+ */
 class mutex_impl
 {
 public:
     pthread_mutex_t     f_mutex = pthread_mutex_t();
     pthread_cond_t      f_condition = pthread_cond_t();
 };
+
+
+/** \var pthread_mutex_t mutex_impl::f_mutex
+ * \brief Mutex to support guards & signals.
+ *
+ * This is the actual system mutex. It is useful to protect areas of code
+ * that only one thread is allowed to access at a time.
+ *
+ * The mutex also supports a condition that it can wait on and signal. This
+ * is useful to signal a new state such as the end of FIFO as any thread
+ * waiting on that FIFO now needs to wake up a give up (no more messages
+ * will be sent to the FIFO).
+ */
+
+
+/** \var pthread_mutex_t mutex_impl::f_condition
+ * \brief Condition linked to the mutex to support signalling.
+ *
+ * We often have to signal that a thread is done in regard to something or
+ * other. That will wake up another thread which can then take over the
+ * next step of the work.
+ *
+ * The condition is used for that purpose as we can wait on it with the
+ * attached mutex.
+ */
 
 
 
@@ -83,12 +118,7 @@ public:
  * It has to be unlocked that many times, of course.
  */
 
-/** \var mutex::f_mutex
- * \brief The pthread mutex.
- *
- * This variable member holds the pthread mutex. The mutex
- * implementation manages this field as required.
- */
+
 
 
 /** \brief An inter-thread mutex to ensure unicity of execution.
@@ -113,7 +143,7 @@ public:
  *
  * The class also includes a condition in order to send signals and wait
  * on signals. There are two ways to send signals and three ways to wait.
- * Note that to call any one of the wait funtions you must first have the
+ * Note that to call any one of the wait functions you must first have the
  * mutex locked, what otherwise happens is undefined.
  *
  * \code
@@ -411,7 +441,7 @@ void mutex::unlock()
  *
  * \warning
  * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredicatable ways.
+ * wait will fail in unpredictable ways.
  *
  * \exception cppthread_exception_not_locked_once_error
  * This exception is raised if the reference count is not exactly 1.
@@ -463,7 +493,7 @@ void mutex::wait()
  *
  * \warning
  * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredicatable ways.
+ * wait will fail in unpredictable ways.
  *
  * \exception cppthread_exception_system_error
  * This exception is raised if a function returns an unexpected error.
@@ -556,10 +586,10 @@ bool mutex::timed_wait(uint64_t const usecs)
  *
  * \warning
  * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredicatable ways.
+ * wait will fail in unpredictable ways.
  *
  * \exception cppthread_exception_mutex_failed_error
- * This exception is raised whenever the thread wait functionf fails.
+ * This exception is raised whenever the thread wait function fails.
  *
  * \param[in] usec  The date when the mutex times out in microseconds.
  *
@@ -733,6 +763,53 @@ void create_system_mutex()
 
     g_system_mutex = new mutex;
 }
+
+
+
+
+/** \typedef mutex::pointer_t
+ * \brief Shared pointer to a mutex.
+ *
+ * You can allocate mutexes as global variables, local variables, variable
+ * members and once in a while you  may want to allocate them. In that
+ * case, we suggest that you use a shared pointer.
+ */
+
+
+/** \typedef mutex::vector_t
+ * \brief A vector of mutexes.
+ *
+ * This type defines a vector that can be used to manage mutexes. In
+ * this case, the mutexes must be allocated.
+ */
+
+
+/** \typedef mutex::direct_vector_t
+ * \brief A vector of mutexes.
+ *
+ * This type defines a vector of direct mutexes (i.e. not pointers to
+ * mutexes). This type can be used when you know the number of mutexes
+ * to allocate. Dynamically adding/removing mutexes with this type
+ * can be rather complicated.
+ */
+
+
+/** \var mutex::f_impl
+ * \brief The pthread mutex implementation.
+ *
+ * This variable member holds the actual pthread mutex. The mutex
+ * implementation manages this field as required.
+ */
+
+
+/** \var mutex::f_reference_count
+ * \brief The lock reference count.
+ *
+ * The mutex tracks the number of times the mutex gets locked.
+ * In the end, the lock reference must be zero for the mutex
+ * to be properly destroyed.
+ */
+
 
 
 

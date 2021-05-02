@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Implementation of the Thread Life class.
@@ -44,6 +46,23 @@ namespace cppthread
 
 
 
+/** \class life
+ * \brief An RAII class managing the lifetime of a thread.
+ *
+ * This class is used to manage the life of a thread: the time it runs.
+ * The constructor calls the thread::start() function and
+ * the destructor makes sure to call the thread::stop() function.
+ *
+ * If you have a specific block or another class that should run a
+ * thread for the lifetime of the block or class object, then this
+ * is well adapted.
+ *
+ * \note
+ * This class is not responsible for deleting the thread at the
+ * end. It only manages the time while the thread runs.
+ */
+
+
 /** \brief Initialize a "thread life" object.
  *
  * This type of objects are used to record a thread and make sure
@@ -54,7 +73,7 @@ namespace cppthread
  * already running, then the constructor will throw.
  *
  * Once such an object was created, it is not possible to prevent
- * the thread life desrtuctor from calling the stop() function and
+ * the thread life destructor from calling the stop() function and
  * waiting for the thread to be done.
  *
  * \note
@@ -104,20 +123,29 @@ life::~life()
 
 
 
-/** \class life
- * \brief An RAII class managing the lifetime of a thread.
+/** \fn life::life(life const & rhs)
+ * \brief The copy operator is deleted.
  *
- * This class is used to manage the life of a thread: the time it runs.
- * The constructor calls the thread::start() function and
- * the destructor makes sure to call the thread::stop() function.
+ * The life object holds a bare pointer to the thread it has to manage,
+ * so we have to declare a copy operator to explicitly delete the copy
+ * operator. We could not have multiple instances of the life object
+ * anyway.
  *
- * If you have a specific block or another class that should run a
- * thread for the lifetime of the block or class object, then this
- * is well adapted.
+ * \param[in] rhs  The right hand side.
+ */
+
+
+/** \fn life::operator = (life const & rhs)
+ * \brief The assignment operator is deleted.
  *
- * \note
- * This class is not responsible for deleting the thread at the
- * end. It only manages the time while the thread runs.
+ * The life object holds a bare pointer to the thread it has to manage
+ * so we have to declare an assignment operator to explicitly delete
+ * the operator. We could not have multiple instances of the life object
+ * anyway.
+ *
+ * \param[in] rhs  The right hand side.
+ *
+ * \return A reference to this object.
  */
 
 

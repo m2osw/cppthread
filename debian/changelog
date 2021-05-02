@@ -1,3 +1,15 @@
+cppthread (1.1.2.0~bionic) bionic; urgency=high
+
+  * Added the worker item_with_predicate class.
+  * Changed the FIFO in a deque so we can handle the predicate.
+  * Added an out of range exception for the pool to raise on invalid size/indices.
+  * Fixed a couple of function that used '.' instead of '->'.
+  * Fixed up the copyright notice.
+  * Ran spellcheck against comments.
+  * Fixed the TODO.txt file.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Wed, 28 Apr 2021 21:08:00 -0700
+
 cppthread (1.1.1.0~bionic) bionic; urgency=high
 
   * Applied a couple of fixes for the mutex handling in the logger.

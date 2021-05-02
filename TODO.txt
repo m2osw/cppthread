@@ -1,8 +1,5 @@
 
 
-* Break up the functions and class, one file per class.
-
-
-
+* Implement many more tests to get to full coverage.
 
 

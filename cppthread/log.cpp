@@ -1,5 +1,7 @@
-// Copyright (c) 2013-2019  Made to Order Software Corp.  All Rights Reserved
+// Copyright (c) 2013-2021  Made to Order Software Corp.  All Rights Reserved
+//
 // https://snapwebsites.org/project/cppthread
+// contact@m2osw.com
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -11,9 +13,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+// You should have received a copy of the GNU General Public License along
+// with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
  * \brief Implementation of the logging facility.
@@ -170,6 +172,26 @@ void set_log_callback(log_callback callback)
     g_log_callback = callback;
     pthread_mutex_unlock(&g_log_mutex);
 }
+
+
+/** \class logger
+ * \brief The cppthread logger.
+ *
+ * The cppthread is a dependency of the snaplogger so we have to have
+ * our own logger implementation in this class.
+ *
+ * This class is very basic. It only supports 5 severity levels and a simple
+ * mechanism to write messages to a log file or a callback.
+ *
+ * \note
+ * If you can use the snaplogger library, then you should avoid using
+ * this cppthread implementation. The snaplogger will automatically
+ * provide a callback to this cppthread implementation and output
+ * the logs as required. It's just that the snaplogger is way more
+ * powerful.
+ * \note
+ * This is actually the main reason why the class is marked final.
+ */
 
 
 /** \brief Initialize the logger.
@@ -419,7 +441,10 @@ logger & logger::end()
         }
         else if(f_level >= log_level_t::info)
         {
-            std::cerr << to_string(f_level) << ": " << f_log.str() << std::endl;
+            std::cerr << to_string(f_level)
+                      << ": "
+                      << f_log.str()
+                      << std::endl;
         }
 
         f_log.str(std::string());
@@ -474,6 +499,96 @@ std::string to_string(log_level_t level)
                                  + std::to_string(static_cast<int>(level))
                                  + ")");
 }
+
+
+/** \fn logger::operator << (T const & v)
+ * \brief Send any type of data to the logger.
+ *
+ * This operator allows to send data of type T to the logger.
+ *
+ * The logger makes use of a stringstream to generate the final message.
+ * The type T must be a type that the stringstream supports. In most
+ * cases, these are the types that the iostream supports.
+ *
+ * \param[in] v  The value to be output to this log message.
+ *
+ * \return A reference to this logger.
+ */
+
+
+/** \enum log_level_t
+ * \brief The log level or severity.
+ *
+ * How important/severe the log message is.
+ *
+ * \warning
+ * Note that logging a message with level fatal does not stop your program.
+ * It's just a log level. You are responsible for stopping your program
+ * if the error is indeed fatal.
+ */
+
+
+/** \var logger::f_level
+ * \brief The level of this message.
+ *
+ * This variable member holds the level of the message. The level can
+ * be specified within the set of `<<` operators.
+ *
+ * The default is to display informational, warning, error, and fatal
+ * error messages to the error output (stderr). Other messages (debug)
+ * get dropped. If you have a callback assigned (i.e. for example, if
+ * you use snaplogger in your application), then all the messages get
+ * redirected to that callback.
+ */
+
+
+/** \var logger::f_log
+ * \brief The log message.
+ *
+ * This variable member is a stringstream which holds the current message.
+ * Once the end() is sent, it outputs the f_log.str() message.
+ *
+ * \note
+ * In order for messages to not criss-cross each other, the implementation
+ * makes use of a global lock. That means only one thread can be sending
+ * a log message at a time. The unlock() happens when the end() function
+ * gets called.
+ */
+
+
+/** \fn end(logger & l)
+ * \brief Close a log statement.
+ *
+ * This function is used to simplified the end of a log statement:
+ *
+ * \code
+ *     int err(errno);
+ *
+ *     log << cppthread::log_level_t::fatal
+ *         << "the initialization failed with errno = "
+ *         << err
+ *         << cppthread::end;
+ * \endcode
+ *
+ * The result is a call to the logger::end() function which sends the message
+ * to the logger current output.
+ *
+ * \param[in] l  A reference to the logger.
+ *
+ * \return A reference to the logger.
+ */
+
+
+/** \typedef log_callback
+ * \brief The log callback type definition.
+ *
+ * By default, log messages will be sent to your console using std::cerr.
+ * By setting up a log_callback function instead, it will be sent to
+ * your function.
+ *
+ * \param[in] level  The level (severity) of this log message.
+ * \param[in] message  The message to be logged.
+ */
 
 
 } // namespace cppthread
