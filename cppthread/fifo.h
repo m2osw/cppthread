@@ -59,12 +59,16 @@ class fifo
 private:
     typedef std::deque<T>   items_t;
 
+    // void_t is C++17 so to compile on more system, we have our own definition
+    //
+    template<typename ...> using void_t = void;
+
 
     // the following templates are used to know whether class T has a
     // valid_workload() function returning a bool and if so, we'll use
     // it to know whether an item is ready to be popped.
     //
-    template<typename, typename, typename = std::void_t<>>
+    template<typename, typename, typename = void_t<>>
         struct item_has_predicate
             : public std::false_type
     {
@@ -72,7 +76,7 @@ private:
 
     template<typename C, typename R, typename... A>
         struct item_has_predicate<C, R(A...),
-                std::void_t<decltype(std::declval<C>().valid_workload(std::declval<A>()...))>>
+                void_t<decltype(std::declval<C>().valid_workload(std::declval<A>()...))>>
             : public std::is_same<decltype(std::declval<C>().valid_workload(std::declval<A>()...)), R>
     {
     };
