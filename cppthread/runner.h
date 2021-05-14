@@ -36,6 +36,7 @@
 
 // C++ lib
 //
+#include    <string>
 #include    <vector>
 
 
