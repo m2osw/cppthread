@@ -43,7 +43,7 @@
 // C++ lib
 //
 #include    <numeric>
-#include    <queue>
+#include    <deque>
 
 
 

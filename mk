@@ -4,7 +4,7 @@
 # This will work if you built the environment using our ~/bin/build-snap script
 
 PROCESSORS=`nproc`
-BUILDDIR=../../../BUILD/contrib/cppthread
+BUILDDIR=../../BUILD/Debug/contrib/cppthread
 
 # "Brief Version" -- for the documentation
 VERSION=`dpkg-parsechangelog --show-field Version | sed -e 's/~.*//' -e 's/\(^[0-9]\+\.[0-9]\+\).*/\1/'`
