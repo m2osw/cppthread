@@ -1,3 +1,9 @@
+cppthread (1.1.5.0~bionic) bionic; urgency=high
+
+  * Include the deque instead of the queue header.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 24 May 2021 19:29:08 -0700
+
 cppthread (1.1.4.0~bionic) bionic; urgency=high
 
   * Added a few missing #include's.
