@@ -250,7 +250,7 @@ namespace cppthread
  * The function can be called any number of times. It really only
  * has an effect on the first call, though.
  *
- * \param[in] immediate  Whether the clear the remaining items on
+ * \param[in] immediate  Whether to clear the remaining items on
  *                       the queue.
  */
 
