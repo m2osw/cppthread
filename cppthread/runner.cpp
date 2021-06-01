@@ -178,7 +178,9 @@ void runner::enter()
     pid_t const tid(f_thread->get_thread_tid());
 
     log << log_level_t::info
-        << "entering thread #"
+        << "entering thread \""
+        << get_name()
+        << "\" #"
         << tid
         << "."
         << end;
@@ -224,7 +226,9 @@ void runner::leave(leave_status_t status)
     pid_t const tid(f_thread->get_thread_tid());
 
     log << log_level_t::info
-        << "leaving thread #"
+        << "leaving thread \""
+        << get_name()
+        << "\" #"
         << tid
         << " with status "
         << static_cast<int>(status)     // TODO: write name too
