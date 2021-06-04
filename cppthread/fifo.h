@@ -130,7 +130,7 @@ private:
                 , bool>::type
         validate_item(C const & item)
     {
-        snap::NOTUSED(item);
+        snap::NOT_USED(item);
         return true;
     }
 
@@ -171,7 +171,7 @@ private:
                 , bool>::type
         validate_item(C const & item)
     {
-        snap::NOTUSED(item);
+        snap::NOT_USED(item);
         return true;
     }
 
