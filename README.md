@@ -34,6 +34,9 @@ Here are the various objects found in the library:
 * Inter thread communication (`fifo`)
 * Logging capability (`log`)
 * Thread Specific Exceptions (`cppthread_exception`)
+* Listing processes/threads
+* Loading of plugins (.so files, `plugins`)
+* Signals between plugins (`signal`)
 
 
 # Safety
@@ -104,10 +107,18 @@ safely send and receive messages (i.e. payloads). The FIFO automatically
 uses a guard to add new messages and to remove existing messages. In other
 words, the messages you get are 100% ready for you to access as you wish.
 
+The name "FIFO" is somewhat misleading when using the thread pool system
+and now that this class supports a priority system which allows for
+processing messages _early_. The priority actually uses dependencies. So
+message A can be marked as necessary to be able to process message B.
+In that case, B will be sitting in the FIFO until the processing of A is
+complete. When no such dependency exists, both messages can be processed
+in parallel or at least in any order.
+
 For threads that do not just receive/send messages, you must make sure
 to use the `cppthread::guard` object with a `cppthread::mutex` to create
 a barrier. Although a boolean flag may work as is without the need for
-a mutex, because of all the various CPU caches, it is very likely to that
+a mutex. However, with all the various CPU caches, it is very likely that,
 once in while, a change to such a flag will not be visible for a while.
 
 

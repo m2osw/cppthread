@@ -72,4 +72,29 @@ install(
 )
 
 
+##
+## build the boot identifier tool
+##
+project(boot-id)
+
+add_executable(${PROJECT_NAME}
+    boot_id.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    cppthread
+)
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+
+    COMPONENT
+        runtime
+)
+
+
 # vim: ts=4 sw=4 et nocindent

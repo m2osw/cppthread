@@ -34,6 +34,7 @@ add_library(${PROJECT_NAME} SHARED
     life.cpp
     log.cpp
     mutex.cpp
+    plugins.cpp
     runner.cpp
     thread.cpp
     version.cpp
@@ -46,6 +47,7 @@ include_directories(
 target_link_libraries(${PROJECT_NAME}
     ${LIBEXCEPT_LIBRARIES}
     pthread
+    dl
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

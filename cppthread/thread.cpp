@@ -39,6 +39,11 @@
 #include    <snapdev/glob_to_list.h>
 
 
+// C++ lib
+//
+#include    <fstream>
+
+
 // C lib
 //
 #include    <signal.h>
@@ -947,6 +952,30 @@ bool is_process_running(pid_t pid)
     struct stat st;
     return stat(proc_path.c_str(), &st) == 0;
 }
+
+
+/** \brief Retrieve the boot UUID.
+ *
+ * The Linux kernel generates a UUID on a reboot. This allows software to
+ * determine whether the computer was rebooted since the last time it was
+ * used.
+ *
+ * On computers where there is no boot identifier, this function returns
+ * an empty string.
+ *
+ * \return The boot UUID as a string or an empty string if not available.
+ */
+std::string get_boot_id()
+{
+    std::ifstream in("/proc/sys/kernel/random/boot_id");
+    std::string uuid;
+    if(in)
+    {
+        std::getline(in, uuid);
+    }
+    return uuid;
+}
+
 
 
 
