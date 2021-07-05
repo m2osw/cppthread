@@ -17,14 +17,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-##
-## cppthread unittest
-##
-project(unittest)
-
 find_package(Catch2)
 
 if(Catch2_FOUND)
+
+    ##
+    ## cppthread unittest
+    ##
+    project(unittest)
 
     add_definitions(
         -DCATCH_CONFIG_PREFIX_ALL
@@ -35,21 +35,36 @@ if(Catch2_FOUND)
         ${PROJECT_SOURCE_DIR}
         ${CATCH_INCLUDE_DIR}
         ${LIBEXCEPT_INCLUDE_DIRS}
+        ${SNAPDEV_INCLUDE_DIRS}
     )
 
     add_executable(${PROJECT_NAME}
-        main.cpp
+        catch_main.cpp
 
-        example.cpp
-        fifo.cpp
-        version.cpp
+        catch_example.cpp
+        catch_fifo.cpp
+        catch_plugins.cpp
+        catch_version.cpp
     )
 
     target_link_libraries(${PROJECT_NAME}
         cppthread
     )
 
-    add_test( unittests ${PROJECT_NAME} )
+    add_test(unittests ${PROJECT_NAME})
+
+    ##
+    ## Add a test plugin to verify the loading of it
+    ##
+    project(testme)
+
+    add_library(${PROJECT_NAME} SHARED
+        plugin_testme.cpp
+    )
+
+    target_link_libraries(${PROJECT_NAME}
+        cppthread
+    )
 
 else(Catch2_FOUND)
 

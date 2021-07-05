@@ -19,7 +19,7 @@
 
 // self
 //
-#include    "main.h"
+#include    "catch_main.h"
 
 
 // cppthread lib
@@ -302,4 +302,3 @@ CATCH_TEST_CASE("fifo", "[fifo]")
 
 
 // vim: ts=4 sw=4 et
-

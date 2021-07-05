@@ -42,6 +42,7 @@ add_library(${PROJECT_NAME} SHARED
 
 include_directories(
     ${LIBEXCEPT_INCLUDE_DIRS}
+    ${SNAPDEV_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}

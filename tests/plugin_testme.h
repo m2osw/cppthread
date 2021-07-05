@@ -16,44 +16,43 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-// self
-//
-#include    "main.h"
-
+#pragma once
 
 // cppthread lib
 //
-#include    <cppthread/exception.h>
-#include    <cppthread/fifo.h>
-#include    <cppthread/guard.h>
-#include    <cppthread/life.h>
-#include    <cppthread/mutex.h>
-#include    <cppthread/pool.h>
-#include    <cppthread/runner.h>
-#include    <cppthread/thread.h>
-#include    <cppthread/worker.h>
-
-
-// snapdev lib
-//
-#include    <snapdev/not_reached.h>
-
-
-// C lib
-//
-#include    <unistd.h>
+#include    <cppthread/plugins.h>
 
 
 
-CATCH_TEST_CASE("example", "[example]")
+namespace optional_namespace
 {
-    CATCH_START_SECTION("Simple threading")
-    {
-        // TODO...
-    }
-    CATCH_END_SECTION()
-}
 
 
+struct data_t
+{
+    int     f_value = 0;
+};
+
+
+
+/** \brief A test plugin class.
+ *
+ * All plugins must be derived from cppthread::plugin and include the
+ * CPPTHREAD_PLUGIN_DEFAULTS() macro to generate the default header data.
+ */
+class testme
+    : public cppthread::plugin
+{
+public:
+    CPPTHREAD_PLUGIN_DEFAULTS(testme)
+
+    virtual void        bootstrap(void * data);
+    std::string         it_worked();
+
+private:
+};
+
+
+
+} // optional_namespace namespace
 // vim: ts=4 sw=4 et

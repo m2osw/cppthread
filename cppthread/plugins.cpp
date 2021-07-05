@@ -21,7 +21,6 @@
 //
 #include    "cppthread/plugins.h"
 
-
 #include    "cppthread/log.h"
 #include    "cppthread/guard.h"
 
@@ -49,7 +48,7 @@ namespace cppthread
 {
 
 
-namespace
+namespace detail
 {
 
 
@@ -196,7 +195,9 @@ plugin::pointer_t plugin_repository::get_plugin(plugin_names::filename_t const &
  */
 void plugin_repository::register_plugin(plugin::pointer_t p)
 {
-    f_plugins[p->filename()] = p;
+    p->f_filename = f_register_filename;
+
+    f_plugins[f_register_filename] = p;
 }
 
 
@@ -204,7 +205,7 @@ void plugin_repository::register_plugin(plugin::pointer_t p)
 
 
 
-} // no name namespace
+} // detail namespace
 
 
 
@@ -244,13 +245,16 @@ plugin_factory::plugin_factory(plugin_definition const & definition, std::shared
  */
 plugin_factory::~plugin_factory()
 {
-    if(f_plugin.use_count() != 1)
-    {
-        std::cerr
-            << "error: the plugin is still in use by objects other than the plugin factory, which is invalid at the time we are destroying the plugin."
-            << std::endl;
-        std::terminate();
-    }
+    // TODO: at this time this isn't working and it's not going to work any
+    //       time soon, I'm afraid.
+    //
+    //if(f_plugin.use_count() != 1)
+    //{
+    //    std::cerr
+    //        << "error: the plugin is still in use by objects other than the plugin factory, which is invalid at the time we are destroying the plugin."
+    //        << std::endl;
+    //    std::terminate();
+    //}
 }
 
 
@@ -280,7 +284,7 @@ plugin_definition const & plugin_factory::definition() const
  *
  * \return A shared pointer to the plugin managed by this plugin factory.
  */
-std::shared_ptr<plugin> plugin_factory::instance()
+std::shared_ptr<plugin> plugin_factory::instance() const
 {
     return f_plugin;
 }
@@ -314,15 +318,15 @@ void plugin_factory::register_plugin(char const * name, plugin::pointer_t p)
         // two plugins in a single file and that is a case we do not support
         // and would result in such an error
         //
-        throw cppthread_name_mismatch(
-                "registering plugin named \""
-                + p->name()
-                + "\" (from the plugin definition -- CPPTHREAD_PLUGIN_START), but expected \""
-                + name
-                + "\" (from the plugin factor definition -- CPPTHREAD_PLUGIN_END).");
+        throw cppthread_name_mismatch(                                                          // LCOV_EXCL_LINE
+                "registering plugin named \""                                                   // LCOV_EXCL_LINE
+                + p->name()                                                                     // LCOV_EXCL_LINE
+                + "\" (from the plugin definition -- CPPTHREAD_PLUGIN_START), but expected \""  // LCOV_EXCL_LINE
+                + name                                                                          // LCOV_EXCL_LINE
+                + "\" (from the plugin factor definition -- CPPTHREAD_PLUGIN_END).");           // LCOV_EXCL_LINE
     }
 
-    plugin_repository::instance().register_plugin(p);
+    detail::plugin_repository::instance().register_plugin(p);
 }
 
 
@@ -355,6 +359,33 @@ void plugin_factory::register_plugin(char const * name, plugin::pointer_t p)
  */
 
 
+
+
+/** \brief Initialize the plugin with its factory.
+ *
+ * This constructor saves the plugin factory pointer. This is used by the
+ * various functions returning plugin definition parameters.
+ *
+ * \param[in] factory  The factory that created this plugin.
+ */
+plugin::plugin(plugin_factory const & factory)
+    : f_factory(factory)
+{
+}
+
+
+/** \brief For the virtual table.
+ *
+ * We want the plugin class to have a virtual table so we have a virtual
+ * destructor.
+ *
+ * \note
+ * At the moment this destructor is never called. We'll want to look into
+ * a proper way to dlclose() plugins at some point.
+ */
+plugin::~plugin()           // LCOV_EXCL_LINE
+{                           // LCOV_EXCL_LINE
+}                           // LCOV_EXCL_LINE
 
 
 /** \brief Return the version of the plugin.
@@ -403,6 +434,12 @@ std::string plugin::name() const
  * This function returns the full path to the file that was loaded to make
  * this plugin work. This is the exact path that was used with the dlopen()
  * function.
+ *
+ * \note
+ * Whenever the plugin registers itself via the plugin_repository class,
+ * the plugin_repository takes that chance to save the filename to the
+ * plugin class. This path is one to one the one used with the dlopen()
+ * function call.
  *
  * \return The path to the plugin file.
  */
@@ -511,6 +548,27 @@ string_set_t plugin::suggestions() const
 }
 
 
+/** \brief Give the plugin a change to properly initialize itself.
+ *
+ * The order in which plugins are loaded is generally just alphabetical
+ * which in most cases is not going to cut it well when initializing them.
+ * Instead, the library offers a dependency list in each plugin so plugins
+ * that are depended on can be initialized first (i.e. if A depends on B,
+ * then B gets initialized first).
+ *
+ * The bootstrap() is that function that gets called once all the plugins
+ * were loaded. This gives you the ability to properly initialize your
+ * plugins.
+ *
+ * \param[in] data  The user data as defined with the
+ * plugin_collection::set_data() function.
+ *
+ * \sa plugin_collection::set_data()
+ */
+void plugin::bootstrap(void * data)
+{
+    snap::NOT_USED(data);
+}
 
 
 
@@ -578,10 +636,54 @@ std::string plugin_paths::at(std::size_t idx) const
 }
 
 
+/** \brief Change the allow-redirect flag.
+ *
+ * This function is used to switch the allow-redirect flag to true or false.
+ * By default the flag is false.
+ *
+ * Setting the flag to true means that a user can define a relative path
+ * outside of the current path (i.e. which starts with "../").
+ *
+ * \remarks
+ * Most often, paths for plugin locations are full root paths so this flag
+ * doesn't apply to those. Also, the canonicalization checks in memory
+ * strings only. It will not verify that the path is not going outside of
+ * the current path through softlink files.
+ *
+ * \param[in] allow  Whether to allow redirects in paths.
+ *
+ * \sa get_allow_redirects()
+ * \sa canonicalize()
+ */
+void plugin_paths::set_allow_redirects(bool allow)
+{
+    f_allow_redirects = allow;
+}
+
+
+/** \brief Check whether redirects are allowed or not.
+ *
+ * This function returns true if redirects are allowed, false otherwise.
+ *
+ * When canonicalizing a path, a ".." outside of the current directory
+ * is viewed as a redirect. These are not allowed by default for obvious
+ * security reasons. When false and such a path is detected, the
+ * canonicalize() function throws an error.
+ *
+ * \return true when redirects are allowed.
+ *
+ * \sa set_allow_redirects()
+ */
+bool plugin_paths::get_allow_redirects() const
+{
+    return f_allow_redirects;
+}
+
+
 /** \brief Canonicalize the input path.
  *
  * This function canonicalize the input path so that two paths referencing
- * the same files are eliminated.
+ * the same files can easily be compared against each other.
  *
  * \note
  * We do not test the current local system (for one reason, the path may
@@ -590,19 +692,21 @@ std::string plugin_paths::at(std::size_t idx) const
  *
  * \exception cppthread_invalid_error
  * The input \p path cannot be an empty string. Also, when the
- * \p allow_redirects parameter is set to false (the default), then the
- * exception is raised if the path starts with "../".
+ * allow-redirects flag (see the set_allow_redirects() function) is
+ * set to false (the default), then the exception is raised if the path
+ * starts with "../".
  *
  * \param[in] path  The path to be converted.
- * \param[in] allow_redirects  Whether a ".." is allowed at the top of the path.
  *
  * \return The canonicalized path.
+ *
+ * \sa push()
  */
-plugin_paths::path_t plugin_paths::canonicalize_path(path_t const & path, bool allow_redirects)
+plugin_paths::path_t plugin_paths::canonicalize(path_t const & path)
 {
     if(path.empty())
     {
-        throw cppthread_invalid_error("path cannot be an empty string");
+        throw cppthread_invalid_error("path cannot be an empty string.");
     }
 
     bool const is_root(path[0] == '/');
@@ -639,14 +743,15 @@ plugin_paths::path_t plugin_paths::canonicalize_path(path_t const & path, bool a
             else if(idx == 0
                  && is_root)
             {
-                segments.erase(segments.begin() + idx);
+                segments.erase(segments.begin());
+                --idx;
             }
-            else if(!allow_redirects)
+            else if(!f_allow_redirects)
             {
                 throw cppthread_invalid_error(
                       "the path \""
                     + path
-                    + "\" going outside of the allowed range");
+                    + "\" going outside of the allowed range.");
             }
         }
     }
@@ -670,29 +775,28 @@ plugin_paths::path_t plugin_paths::canonicalize_path(path_t const & path, bool a
  *
  * Before adding the new path, we make sure that it is not already defined
  * in the existing set. Adding the same path more than once is not useful.
- * Only the first instance would be useful and the second generates a waste
- * of time.
+ * Only the first instance would be useful and the second would generate
+ * a waste of time.
  *
- * \exception cppthread_invalid_error
- * This function raises the cppthread_invalid_error exception if the input
- * string is the empty string (use "." for the current directory) or if
- * the string represents the root directory ("/").
+ * In many cases, you will want to use the add() function instead as it
+ * is capable to add many paths separated by colons all at once.
+ *
+ * \note
+ * The function calls canonicalize() on the input path. If the path is
+ * considered invalid, then an exception is raised.
  *
  * \param[in] path  The path to be added.
+ *
+ * \sa add()
+ * \sa canonicalize()
  */
 void plugin_paths::push(path_t const & path)
 {
-    // make sure it's not empty
-    //
-    if(path.empty())
-    {
-        throw cppthread_invalid_error("you cannot add an empty path or just \"/\"; (1) the root path is not allowed; (2) use \".\" for the current directory.");
-    }
-
-    auto it(std::find(f_paths.begin(), f_paths.end(), path));
+    path_t const canonicalized(canonicalize(path));
+    auto it(std::find(f_paths.begin(), f_paths.end(), canonicalized));
     if(it == f_paths.end())
     {
-        f_paths.push_back(path);
+        f_paths.push_back(canonicalized);
     }
 }
 
@@ -1023,7 +1127,7 @@ bool plugin_names::is_emcascript_reserved(std::string const & word)
  */
 plugin_names::filename_t plugin_names::to_filename(name_t const & name)
 {
-    auto check = [name](plugin_paths::path_t const & path)
+    auto check = [&name](plugin_paths::path_t const & path)
     {
         // "path/<name>.so"
         //
@@ -1087,9 +1191,9 @@ plugin_names::filename_t plugin_names::to_filename(name_t const & name)
 
     if(max == 0)
     {
-        // try the local folder by default
+        // if not paths were supplied, try the local folder
         //
-        return check(".");
+        return check("./");
     }
 
     return filename_t();
@@ -1227,7 +1331,7 @@ void plugin_names::add(std::string const & set)
  *
  * \return The map of name/filename pairs.
  */
-plugin_names::names_t plugin_names::get_names() const
+plugin_names::names_t plugin_names::names() const
 {
     return f_names;
 }
@@ -1323,7 +1427,7 @@ void plugin_names::find_plugins(name_t const & prefix, name_t const & suffix)
  *
  * \code
  *     plugin_paths p;
- *     p.add("/usr/lib/snaplogger/plugins:/usr/local/lib/snaplogger/plugins");
+ *     p.add("/usr/local/lib/snaplogger/plugins:/usr/lib/snaplogger/plugins");
  *
  *     plugin_names n(p, true);
  *     n.add("network, cloud-system");
@@ -1349,9 +1453,16 @@ void plugin_names::find_plugins(name_t const & prefix, name_t const & suffix)
  * may want to call the set_data() function in order to define the pointer
  * that will be passed to the bootstrap() function.
  *
+ * The f_names is a copy of your \p names parameter. That copy may be modified
+ * if some of the plugins have dependencies that were not listed in the input
+ * \p names object. In other words, if A depends on B, you only need to
+ * specify A as the plugin you want to load. The load_plugins() function
+ * will automatically know that it has to then load B.
+ *
  * \param[in] names  A list of plugins to be loaded.
  *
  * \sa set_data();
+ * \sa load_plugins();
  */
 plugin_collection::plugin_collection(plugin_names const & names)
     : f_names(names)
@@ -1417,86 +1528,106 @@ bool plugin_collection::load_plugins()
     // TODO/TBD? add a "server" plugin which represents the main process
     //f_plugins.insert("server", server.get());
 
-    plugin_repository & repository(plugin_repository::instance());
+    detail::plugin_repository & repository(detail::plugin_repository::instance());
+    bool changed(true);
     bool good(true);
-    for(auto const & name_filename : f_names.get_names())
+    while(changed)
     {
-        // the main process is considered a "server" and it will eventually
-        // be added to the list under that name, so we can't allow this name
-        // here
-        //
-        if(name_filename.first == "server")
-        {
-            log << log_level_t::error
-                << "a plugin cannot be called \"server\"."
-                << end;
-            good = false;
-            continue;
-        }
+        changed = false;
 
-        plugin::pointer_t p(repository.get_plugin(name_filename.second));
-        if(p == nullptr)
+        plugin_names::names_t names(f_names.names());
+        for(auto const & name_filename : names)
         {
-            log << cppthread::log_level_t::fatal
-                << "plugin \""
-                << name_filename.first
-                << "\" not found."
-                << end;
-            good = false;
-            continue;
-        }
-
-        string_set_t const conflicts1(p->conflicts());
-        for(auto & op : f_plugins)
-        {
-            // the conflicts can be indicated in either direction so we
-            // have to test both unless one is true then we do not have to
-            // test the other
+            // the main process is considered to be the "server" plugin and it
+            // will eventually be added to the list under that name, so we can't
+            // allow this name here
             //
-            bool in_conflict(conflicts1.find(op->name()) != conflicts1.end());
-            if(!in_conflict)
+            // Note: this should not happen since we don't allow the addition of
+            // the "server" name to the list of names (see plugin_names::push()
+            // for details)
+            //
+            if(name_filename.first == "server")
             {
-                string_set_t const conflicts2(op->conflicts());
-                in_conflict = conflicts2.find(op->name()) != conflicts2.end();
+                log << log_level_t::error                           // LCOV_EXCL_LINE
+                    << "a plugin cannot be called \"server\"."      // LCOV_EXCL_LINE
+                    << end;                                         // LCOV_EXCL_LINE
+                good = false;                                       // LCOV_EXCL_LINE
+                continue;                                           // LCOV_EXCL_LINE
             }
-            if(in_conflict)
+
+            plugin::pointer_t p(repository.get_plugin(name_filename.second));
+            if(p == nullptr)
             {
                 log << cppthread::log_level_t::fatal
                     << "plugin \""
-                    << op->name()
-                    << "\" is in conflict with \""
                     << name_filename.first
-                    << "\"."
+                    << "\" not found."
                     << end;
                 good = false;
                 continue;
             }
-        }
 
-        f_plugins.push_back(p);
-        f_plugins_by_name[name_filename.first] = p;
+            string_set_t const conflicts1(p->conflicts());
+            for(auto & op : f_plugins_by_name)
+            {
+                // the conflicts can be indicated in either direction so we
+                // have to test both unless one is true then we do not have to
+                // test the other
+                //
+                bool in_conflict(conflicts1.find(op.first) != conflicts1.end());
+                if(!in_conflict)
+                {
+                    string_set_t const conflicts2(op.second->conflicts());
+                    in_conflict = conflicts2.find(op.first) != conflicts2.end();
+                }
+                if(in_conflict)
+                {
+                    log << cppthread::log_level_t::fatal
+                        << "plugin \""
+                        << op.first
+                        << "\" is in conflict with \""
+                        << name_filename.first
+                        << "\"."
+                        << end;
+                    good = false;
+                    continue;
+                }
+            }
+
+            string_set_t const dependencies(p->dependencies());
+            for(auto & d : dependencies)
+            {
+                if(names.find(d) == names.end())
+                {
+                    f_names.push(d);
+                    changed = true;
+                }
+            }
+
+            f_plugins_by_name[name_filename.first] = p;
+        }
     }
 
     // set the f_ordered_plugins with the default order as alphabetical,
     // although we check dependencies to properly reorder as expected
     // by what each plugin tells us what its dependencies are
     //
-    for(auto const & p : f_plugins)
+    for(auto const & p : f_plugins_by_name)
     {
         auto it(std::find_if(
                 f_ordered_plugins.begin(),
                 f_ordered_plugins.end(),
                 [&p](auto const & plugin)
                 {
-                    return plugin->dependencies().find(p->name()) != plugin->dependencies().end();
+                    return plugin->dependencies().find(p.first) != plugin->dependencies().end();
                 }));
         if(it != f_ordered_plugins.end())
         {
-            f_ordered_plugins.insert(it, p);
+            f_ordered_plugins.insert(it, p.second);
         }
         else
         {
-            f_ordered_plugins.push_back(p);
+            f_ordered_plugins.push_back(p.second);
         }
     }
 
@@ -1534,30 +1665,6 @@ bool plugin_collection::is_loaded(std::string const & name) const
 }
 
 
-/** \brief Retrieve a plugin from this collection.
- *
- * This function searches for a plugin by the given name in this collection.
- *
- * Note that different collections can share the same plugin (if the filenames
- * are the same) and one collection may know about a plugin and another
- * collection may not know about a plugin. At this time, the library does not
- * offer a direct access to the global list so you can't determine whether
- * a specific plugin is loaded through a plugin_collection.
- *
- * \param[in] name  The name of the plugin to search.
- *
- * \return The pointer to the plugin if found, nullptr otherwise.
- */
-plugin::pointer_t plugin_collection::get_plugin_by_name(std::string const & name)
-{
-    auto it(f_plugins_by_name.find(name));
-    if(it != f_plugins_by_name.end())
-    {
-        return it->second;
-    }
-
-    return plugin::pointer_t();
-}
 
 
 

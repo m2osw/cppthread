@@ -23,6 +23,7 @@
 #include    "cppthread/mutex.h"
 
 #include    "cppthread/exception.h"
+#include    "cppthread/version.h"       // used in CPPTHREAD_PLUGIN_START()
 
 
 // snapdev lib
@@ -43,29 +44,49 @@ namespace cppthread
 {
 
 
+namespace detail
+{
+class plugin_repository;
+} // detail namespace
+
+
 typedef std::set<std::string>           string_set_t;
 
 
 template<int N>
 constexpr char const * validate_name(char const (&str)[N])
 {
-    static_assert(N > 0);
+    static_assert(N - 1 > 0);
 
-    static_assert(
-               str[0] == '_'
-            || (str[0] >= 'a' && str[0] <= 'z')
-            || (str[0] >= 'A' && str[0] <= 'Z'));
-
-    for(int i(1); i < N; ++i)
+    if(str[0] != '_'
+    && (str[0] < 'a' || str[0] > 'z')
+    && (str[0] < 'A' || str[0] > 'Z'))
     {
-        static_assert(
-                   str[i] == '_'
-                || (str[i] >= 'a' && str[i] <= 'z')
-                || (str[i] >= 'A' && str[i] <= 'Z')
-                || (str[i] >= '0' && str[i] <= '9'));
+        throw cppthread_logic_error(
+                    "first character of name \""
+                  + std::string(str)
+                  + "\" not valid.");
     }
 
-    return &str;
+    for(int i(1); i < N - 1; ++i)
+    {
+        if(str[i] != '_'
+        && (str[i] < 'a' || str[i] > 'z')
+        && (str[i] < 'A' || str[i] > 'Z')
+        && (str[i] < '0' || str[i] > '9'))
+        {
+            throw cppthread_logic_error(
+                    "character #"
+                  + std::to_string(i)
+                  + " ("
+                  + str[i]
+                  + ") of name \""
+                  + str
+                  + "\" not valid.");
+        }
+    }
+
+    return str;
 }
 
 
@@ -73,9 +94,9 @@ constexpr time_t validate_date(time_t date)
 {
     // any new plugin must be created after this date (about 2021/06/22 10:30)
     //
-    if(date > 1624382757LL)
+    if(date < 1624382757LL)
     {
-        throw std::range_error("plugin dates are expected to be at least 2021/06/22 10:30");
+        throw cppthread_out_of_range("plugin dates are expected to be at least 2021/06/22 10:30");
     }
     return date;
 }
@@ -122,6 +143,7 @@ struct version_t
 struct plugin_definition
 {
     version_t                           f_version = version_t();
+    version_t                           f_library_version = version_t();
     time_t                              f_last_modification = 0;        // uses the compilation date & time converted to a Unix date
     std::string                         f_name = std::string();
     std::string                         f_description = std::string();
@@ -170,6 +192,22 @@ public:
     }
 
     constexpr plugin_version(version_t version)
+        : plugin_definition_value<version_t>(version)
+    {
+    }
+};
+
+
+class plugin_library_version
+    : public plugin_definition_value<version_t>
+{
+public:
+    constexpr plugin_library_version()
+        : plugin_definition_value<version_t>(version_t())
+    {
+    }
+
+    constexpr plugin_library_version(version_t version)
         : plugin_definition_value<version_t>(version)
     {
     }
@@ -284,7 +322,7 @@ public:
     }
 
     template<int N>
-    constexpr plugin_dependencies(char const * (&dependencies)[N])
+    constexpr plugin_dependencies(char const (&dependencies)[N])
         : plugin_definition_value<char const *>(validate_name(dependencies))
     {
     }
@@ -301,7 +339,7 @@ public:
     }
 
     template<int N>
-    constexpr plugin_conflicts(char const * (&conflicts)[N])
+    constexpr plugin_conflicts(char const (&conflicts)[N])
         : plugin_definition_value<char const *>(validate_name(conflicts))
     {
     }
@@ -318,7 +356,7 @@ public:
     }
 
     template<int N>
-    constexpr plugin_suggestions(char const * (&suggestions)[N])
+    constexpr plugin_suggestions(char const (&suggestions)[N])
         : plugin_definition_value<char const *>(validate_name(suggestions))
     {
     }
@@ -391,6 +429,7 @@ constexpr plugin_definition define_plugin(ARGS ...args)
     plugin_definition def =
     {
         .f_version =                find_plugin_information<plugin_version>(args...),               // no default, must be defined
+        .f_library_version =        find_plugin_information<plugin_library_version>(args...),       // no default, must be defined
         .f_last_modification =      find_plugin_information<plugin_last_modification>(args...),     // no default, must be defined
         .f_name =                   find_plugin_information<plugin_name>(args...),                  // no default, must be defined
         .f_description =            find_plugin_information<plugin_description>(args..., plugin_description()),
@@ -419,13 +458,16 @@ public:
 
     std::size_t                         size() const;
     std::string                         at(std::size_t idx) const;
-    path_t                              canonicalize_path(path_t const & path, bool allow_redirects = false);
+    void                                set_allow_redirects(bool allow = true);
+    bool                                get_allow_redirects() const;
+    path_t                              canonicalize(path_t const & path);
     void                                push(path_t const & path);
     void                                add(std::string const & paths);
     void                                erase(std::string const & path);
 
 private:
     paths_t                             f_paths = paths_t();
+    bool                                f_allow_redirects = false;
 };
 
 
@@ -444,7 +486,7 @@ public:
     filename_t                          to_filename(name_t const & name);
     void                                push(name_t const & name);
     void                                add(std::string const & set);
-    names_t                             get_names() const;
+    names_t                             names() const;
 
     void                                find_plugins(name_t const & prefix = name_t(), name_t const & suffix = name_t());
 
@@ -470,7 +512,7 @@ public:
     plugin_factory &                operator = (plugin_factory const &) = delete;
 
     plugin_definition const &       definition() const;
-    std::shared_ptr<plugin>         instance();
+    std::shared_ptr<plugin>         instance() const;
     void                            register_plugin(char const * name, std::shared_ptr<plugin> p);
 
 private:
@@ -494,8 +536,6 @@ public:
     virtual                             ~plugin();
     plugin &                            operator = (plugin const &) = delete;
 
-    pointer_t                           instance();
-
     version_t                           version() const;
     time_t                              last_modification() const;
     plugin_names::name_t                name() const;
@@ -511,6 +551,8 @@ public:
     virtual void                        bootstrap(void * data);
 
 private:
+    friend class detail::plugin_repository;
+
     plugin_factory const &              f_factory;
     plugin_names::filename_t            f_filename = std::string();
 };
@@ -538,16 +580,39 @@ public:
     bool                                load_plugins();
     bool                                is_loaded(std::string const & name) const;
 
-    plugin::pointer_t                   get_plugin_by_name(std::string const & name);
+    /** \brief Retrieve a plugin from this collection.
+     *
+     * This function searches for a plugin by the given name in this collection.
+     *
+     * Note that different collections can share the same plugin (if the filenames
+     * are the same) and one collection may know about a plugin and another
+     * collection may not know about a plugin. At this time, the library does not
+     * offer a direct access to the global list so you can't determine whether
+     * a specific plugin is loaded through a plugin_collection.
+     *
+     * \param[in] name  The name of the plugin to search.
+     *
+     * \return The pointer to the plugin if found, nullptr otherwise.
+     */
+    template<class T>
+    typename T::pointer_t               get_plugin_by_name(std::string const & name)
+    {
+        auto it(f_plugins_by_name.find(name));
+        if(it != f_plugins_by_name.end())
+        {
+            return std::static_pointer_cast<T>(it->second);
+        }
+
+        return typename T::pointer_t();
+    }
 
     void                                set_data(void * data);
 
 private:
     mutex                               f_mutex = mutex();
-    plugin_names const                  f_names;
-    plugin::vector_t                    f_plugins = plugin::vector_t();             // unordered plugins
-    plugin::vector_t                    f_ordered_plugins = plugin::vector_t();     // sorted plugins
+    plugin_names                        f_names;
     plugin::map_t                       f_plugins_by_name = plugin::map_t();        // plugins sorted by name only
+    plugin::vector_t                    f_ordered_plugins = plugin::vector_t();     // sorted plugins
     void *                              f_data = nullptr;
 };
 
@@ -555,25 +620,25 @@ private:
 
 
 #define CPPTHREAD_PLUGIN_START(name, major, minor) \
-    plugin_definition const g_plugin_##name##_definition = ::cppthread::define_plugin( \
-          ::cppthread::plugin_version(version_t(major, minor, 0)) \
-        , ::cppthread::plugin_library_version(version_t(CPPTHREAD_VERSION_MAJOR, CPPTHREAD_VERSION_MINOR, CPPTHREAD_VERSION_PATCH)) \
+    ::cppthread::plugin_definition const g_plugin_##name##_definition = ::cppthread::define_plugin( \
+          ::cppthread::plugin_version(::cppthread::version_t(major, minor, 0)) \
+        , ::cppthread::plugin_library_version(::cppthread::version_t(CPPTHREAD_VERSION_MAJOR, CPPTHREAD_VERSION_MINOR, CPPTHREAD_VERSION_PATCH)) \
         , ::cppthread::plugin_last_modification(UTC_BUILD_TIME_STAMP) \
-        , ::cppthread::name(#name)
+        , ::cppthread::plugin_name(#name)
 
 
 #define CPPTHREAD_PLUGIN_END(name) \
     ); \
-    class plugin_##name##_factory : public plugin_factory { \
+    class plugin_##name##_factory : public ::cppthread::plugin_factory { \
     public: plugin_##name##_factory() \
-        : plugin_factory(g_plugin_##name##_definition, std::make_shared<name>(*this)) \
+        : plugin_factory(g_plugin_##name##_definition, std::make_shared<name>()) \
         { register_plugin(#name, instance()); } \
     plugin_##name##_factory(plugin_##name##_factory const &) = delete; \
     plugin_##name##_factory & operator = (plugin_##name##_factory const &) = delete; \
     } g_plugin_##name##_factory; \
-    name::name() : plugin(&g_plugin_##name##_factory) {} \
+    name::name() : plugin(g_plugin_##name##_factory) {} \
     name::~name() {} \
-    name::pointer_t name::instance() { return std::static_pointer_cast<name>(g_plugin_##name##_factory::instance()); }
+    name::pointer_t name::instance() { return std::static_pointer_cast<name>(g_plugin_##name##_factory.instance()); }
 
 
 

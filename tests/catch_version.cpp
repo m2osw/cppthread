@@ -19,7 +19,7 @@
 
 // self
 //
-#include    "main.h"
+#include    "catch_main.h"
 
 
 // cppthread lib
@@ -33,10 +33,10 @@ CATCH_TEST_CASE("version", "[version]")
 {
     CATCH_START_SECTION("verify runtime vs compile time version numbers")
     {
-        CATCH_REQUIRE(cppthread::get_major_version()   == CPPTHREAD_VERSION_MAJOR);
-        CATCH_REQUIRE(cppthread::get_release_version() == CPPTHREAD_VERSION_MINOR);
-        CATCH_REQUIRE(cppthread::get_patch_version()   == CPPTHREAD_VERSION_PATCH);
-        CATCH_REQUIRE(strcmp(cppthread::get_version_string(), CPPTHREAD_VERSION_STRING) == 0);
+        CATCH_CHECK(cppthread::get_major_version()   == CPPTHREAD_VERSION_MAJOR);
+        CATCH_CHECK(cppthread::get_release_version() == CPPTHREAD_VERSION_MINOR);
+        CATCH_CHECK(cppthread::get_patch_version()   == CPPTHREAD_VERSION_PATCH);
+        CATCH_CHECK(strcmp(cppthread::get_version_string(), CPPTHREAD_VERSION_STRING) == 0);
     }
     CATCH_END_SECTION()
 }

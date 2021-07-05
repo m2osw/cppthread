@@ -22,22 +22,22 @@
 
 // self
 //
-#include "main.h"
+#include    "catch_main.h"
 
 
 // cppthread lib
 //
-#include "cppthread/version.h"
+#include    "cppthread/version.h"
 
 
 // libexcept lib
 //
-#include "libexcept/exception.h"
+#include    "libexcept/exception.h"
 
 
 // C++ lib
 //
-#include <sstream>
+#include    <sstream>
 
 
 
