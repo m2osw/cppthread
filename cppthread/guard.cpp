@@ -105,7 +105,7 @@ guard::~guard()
     {
         // a log was already printed, we do not absolutely need another one
         log << log_level_t::fatal
-            << "guard::unlock() threw an exception while in the ~lock() function."
+            << "mutex::unlock() threw an exception while in the ~guard() function."
             << end;
         std::terminate();
     }
