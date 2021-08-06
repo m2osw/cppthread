@@ -861,6 +861,110 @@ pid_t gettid()
 }
 
 
+/** \brief Set the name of the currently running thread.
+ *
+ * This function is used to set the name of the currently running thread.
+ *
+ * \param[in] name  The name of the thread.
+ *
+ * \return 0 if the function worked, -1 on error.
+ */
+int set_current_thread_name(std::string const & name)
+{
+    return set_thread_name(gettid(), name);
+}
+
+
+/** \brief Set the name of the specified thread.
+ *
+ * This function changes the name of one of your threads. In
+ * most cases, you should let the runner set the name of the thread
+ * on construction.
+ *
+ * This function should be used only if the name somehow changes over
+ * time, for example:
+ *
+ * The thread is a worker thread and you want the name to reflect what
+ * the worker is currently doing. However, do that only if the worker
+ * is going to do work for a while, otherwise it's likely going to be
+ * rather useless (i.e. htop refresh rate is 1 to 2 seconds).
+ *
+ * \exception cppthread_invalid_error
+ * This exception is raised if the name is empty.
+ *
+ * \exception cppthread_out_of_range
+ * This exception is raised if the name is too long. Linux limits the
+ * name of a thread to 15 characters (the buffer has a limit of
+ * 16 characters).
+ *
+ * \param[in] tid  The thread identifier (its number, not pthread_t).
+ * \param[in] name  The name of the thread.
+ *
+ * \return 0 if the function worked, -1 on error.
+ */
+int set_thread_name(pid_t tid, std::string const & name)
+{
+    if(name.empty())
+    {
+        throw cppthread_invalid_error("thread name cannot be empty.");
+    }
+    if(name.length() > 15)
+    {
+        throw cppthread_out_of_range(
+              "thread name is limited to 15 characters, \""
+            + name
+            + "\" is too long.");
+    }
+
+    std::ofstream comm("/proc/" + std::to_string(tid) + "/comm");
+    comm << name;
+
+    return comm ? 0 : -1;
+}
+
+
+/** \brief Retrieve the name of the current thread.
+ *
+ * This function reads the name of the currently running thread by reading
+ * its `/proc/\<tid>/comm` file. See the get_thread_name() for more details.
+ *
+ * \return The name of the current thread.
+ *
+ * \sa get_thread_name()
+ * \sa gettid()
+ */
+std::string get_current_thread_name()
+{
+    return get_thread_name(gettid());
+}
+
+
+/** \brief Retrieve the name of a thread.
+ *
+ * This function reads the name of the \p tid thread by reading its
+ * `/proc/\<tid>/comm` file.
+ *
+ * This function is different from the pthread_getname_np() which will
+ * return the in memory name. If you have access to your runner, you
+ * may instead want to use its get_name() function. Note that the name
+ * of a runner cannot be changed so it may be considered more authoritative.
+ *
+ * \param[in] tid  The thread identifier (its number, not pthread_t).
+ *
+ * \return The name of the specified thread.
+ *
+ * \sa get_current_thread_name()
+ * \sa gettid()
+ */
+std::string get_thread_name(pid_t tid)
+{
+    std::ifstream comm("/proc/" + std::to_string(tid) + "/comm");
+    std::string name;
+    comm >> name;
+    return name;
+}
+
+
 /** \brief Retrieve the list of threads for a given process.
  *
  * This function reads the list of PID from `/proc/<pid>/task/\*` which is

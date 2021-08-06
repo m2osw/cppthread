@@ -103,6 +103,10 @@ private:
 int                 get_total_number_of_processors();
 int                 get_number_of_available_processors();
 pid_t               gettid();
+int                 set_current_thread_name(std::string const & name);
+int                 set_thread_name(pid_t tid, std::string const & name);
+std::string         get_current_thread_name();
+std::string         get_thread_name(pid_t tid);
 
 typedef std::vector<pid_t>      process_ids_t;
 

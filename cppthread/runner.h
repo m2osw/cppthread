@@ -103,5 +103,5 @@ private:
 
 
 
-} // namespac cppthreade
+} // namespace cppthread
 // vim: ts=4 sw=4 et

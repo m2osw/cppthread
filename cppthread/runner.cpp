@@ -51,11 +51,41 @@ namespace cppthread
  * problem occur and we want to log a message. That way you will know
  * which thread runner caused a problem.
  *
+ * \note
+ * The first 15 characters of the name are also used to set the thread
+ * name with the pthread_setname_np() and set_current_thread_name()
+ * functions. That name is then available in the
+ * `/proc/self/task/<tid>/comm` file, which is useful as such a name will
+ * appear in the output of ps and htop and other such tools.
+ *
+ * See: https://stackoverflow.com/questions/68676407/how-do-i-change-the-name-of-one-singlre-thread-in-linux#68676407
+ *
  * \param[in] name  The name of this thread runner.
  */
 runner::runner(std::string const & name)
     : f_name(name)
 {
+    // TBD: should we forbid starting a runner without a name?
+    //
+    if(!name.empty())
+    {
+        // make sure to limit the name to 15 characters
+        //
+        std::string const name15(f_name.substr(0, 15));
+
+        // the pthread_setname_np() allows for the name to be retrieved
+        // with its counter part:
+        //
+        //   pthread_getname_np()
+        //
+        pthread_setname_np(pthread_self(), name15.c_str());
+
+        // but to really change the name in the comm file (and therefore
+        // htop ps, etc.) we further call the set_current_thread_name()
+        // function
+        //
+        set_current_thread_name(name15);
+    }
 }
 
 
