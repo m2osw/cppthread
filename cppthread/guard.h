@@ -41,15 +41,18 @@ class mutex;
 class guard
 {
 public:
-                        guard(mutex & mutex);
+                        guard(mutex & m);
                         guard(guard const & rhs) = delete;
                         ~guard();
 
     guard &             operator = (guard const & rhs) = delete;
 
-    void                unlock();
+    void                unlock(bool done = true);
+    void                lock();
+    bool                is_locked() const;
 
 private:
+    bool                f_locked = false;
     mutex *             f_mutex = nullptr;
 };
 

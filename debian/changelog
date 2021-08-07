@@ -3,6 +3,7 @@ cppthread (1.1.8.0~bionic) bionic; urgency=high
   * Added a get_boot_id() function (will be available to the logger).
   * Added a plugin implementation (load/unload).
   * Added functions to get/set individual thread system name.
+  * Added a re-lock() and is_locked() to the guard object.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 02 Jul 2021 14:59:17 -0700
 

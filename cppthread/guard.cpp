@@ -48,7 +48,7 @@ namespace cppthread
  * \brief Lock a mutex in an RAII manner.
  *
  * This class is used to lock mutexes in a safe manner in regard to
- * exceptions. It is extremely important to lock all mutexes before
+ * exceptions. It is extremely important to unlock all mutexes before
  * a thread quits otherwise the application will lock up.
  *
  * \code
@@ -57,6 +57,15 @@ namespace cppthread
  *        ... // atomic work
  *    }
  * \endcode
+ *
+ * \warning
+ * This guard implementation assumes that the guard itself is used in one
+ * single thread. In other words, even though you could add a guard inside
+ * an object as a variable member, the lock() and is_locked() functions are
+ * not safe in that situation. The constructor and destructor are, so you
+ * could still do it that way. It is still preferred to push a guard on
+ * the stack as shown in the example above, rather than as a variable member
+ * of a class you then create on the stack.
  */
 
 
@@ -71,10 +80,10 @@ namespace cppthread
  *
  * The mutex parameter cannot be a reference to a nullptr pointer.
  *
- * \param[in] mutex  The Snap! mutex to lock.
+ * \param[in] m  The Snap! mutex to lock.
  */
-guard::guard(mutex & mutex)
-    : f_mutex(&mutex)
+guard::guard(mutex & m)
+    : f_mutex(&m)
 {
     if(f_mutex == nullptr)
     {
@@ -83,6 +92,7 @@ guard::guard(mutex & mutex)
         throw cppthread_logic_error("mutex missing in guard() constructor");
     }
     f_mutex->lock();
+    f_locked = true;
 }
 
 
@@ -114,20 +124,126 @@ guard::~guard()
 
 /** \brief Unlock this mutex.
  *
- * This function can be called any number of times. The first time it is
- * called, the mutex gets unlocked. Further calls (in most cases one more
- * when the destructor is called) have no effects.
+ * This function can be called any number of times. If the mutex is currently
+ * locked, the function unlocks it, otherwise nothing happens.
  *
- * This function may throw an exception if the mutex unlock call
- * fails.
+ * If necessary, you can relock the mutex using the lock() function.
+ *
+ * This function may throw an exception if the mutex::unlock() call fails.
+ *
+ * \param[in] done  Whether you are done with this guard, if so, the pointer
+ * will be set to null and you can then destroy the mutex (this is the
+ * default). If instead you want to be able to re-lock the mutex, then set
+ * this parameter to false. The mutex cannot be destroyed if this parameter
+ * is set to false.
+ *
+ * \sa lock()
  */
-void guard::unlock()
+void guard::unlock(bool done)
 {
-    if(f_mutex != nullptr)
+    if(f_locked)
+    {
+        mutex * m(f_mutex);
+        f_locked = false;
+        if(done)
+        {
+            f_mutex = nullptr;
+        }
+        m->unlock();
+    }
+}
+
+
+/** \brief Relock this mutex.
+ *
+ * This function can be called any number of times. If called while the
+ * mutex is not locked, then it gets relocked, otherwise nothing happens.
+ *
+ * Note that when creating the guard, the mutex is automatically locked,
+ * so you rarely need to call this function.
+ *
+ * This is most often used when a mutex needs to be unlocked within a
+ * guarded block:
+ *
+ * \code
+ *     {
+ *         cppthread::guard lock(f_mutex);
+ *
+ *         ...do some things...
+ *
+ *         if(this_or_that)
+ *         {
+ *             lock.unlock();
+ *             do_special_thing_while_unlocked();
+ *             lock.lock();
+ *         }
+ *
+ *         ...do more things...
+ *     }
+ * \endcode
+ *
+ * This example shows how one can run do_special_thing_while_unlocked()
+ * while the lock is not being held. The way it is written is still
+ * RAII safe. If the do_special_thing_while_unlocked() throws, the mutex
+ * is in a known state (i.e. unlocked when exiting the guarded block).
+ *
+ * \note
+ * This implementation always attempts a mutex::lock(), checks whether it
+ * was necessary (i.e. is the f_locked flag false?) and if not, it unlocks
+ * the mutex (since the guard already had the lock to itself).
+ *
+ * \warning
+ * It is not 100% safe to call this function when the guard::unlock()
+ * function is called with its done parameter set to true, which is the
+ * default if you don't specify false in your call. It is safe if the
+ * guard is only used on the stack.
+ *
+ * \sa unlock()
+ */
+void guard::lock()
+{
+    if(f_mutex == nullptr)
+    {
+        return;
+    }
+
+    f_mutex->lock();
+
+    if(f_locked)
     {
         f_mutex->unlock();
-        f_mutex = nullptr;
     }
+    else
+    {
+        f_locked = true;
+    }
+}
+
+
+/** \brief This function returns whether the guard is current locked.
+ *
+ * This function returns the f_locked flag of the guard object. If true,
+ * then the guard is expected to have its mutex locked. If false, then
+ * the guard mutex is not currently locked.
+ *
+ * \warning
+ * This function is not 100% safe if you call unlock() with its done
+ * parameter set to true, which is the default. It is safe if the guard
+ * is only used by on the stack.
+ *
+ * \return true if the guard currently holds the lock.
+ */
+bool guard::is_locked() const
+{
+    bool result(f_mutex != nullptr);
+    if(result)
+    {
+        f_mutex->lock();
+        result = f_locked;
+        f_mutex->unlock();
+    }
+
+    return result;
 }
 
 
@@ -176,6 +292,15 @@ void guard::unlock()
  * will very likely still be in place if such a signal happens
  * while within the lock.
  */
+
+
+/** \var guard::f_locked
+ * \brief Whether the guard is currently in effect.
+ *
+ * This flag is used to know whether the mutex is currently considered locked
+ * by the guard object.
+ */
+
 
 
 } // namespace cppthread
