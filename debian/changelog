@@ -4,6 +4,7 @@ cppthread (1.1.8.0~bionic) bionic; urgency=high
   * Added a plugin implementation (load/unload).
   * Added functions to get/set individual thread system name.
   * Added a re-lock() and is_locked() to the guard object.
+  * Allow signalling mutexes without locking them first.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 02 Jul 2021 14:59:17 -0700
 

@@ -643,19 +643,54 @@ bool mutex::dated_wait(uint64_t usec)
 }
 
 
+/** \brief Signal at least one mutex.
+ *
+ * Our mutexes include a condition that get signaled by calling this
+ * function. This function wakes up one or more listening threads.
+ *
+ * The function does not lock the mutext before sending the signal. This
+ * is useful if you already are in a guarded block or you do not mind
+ * waking up more than one thread as a result of the call.
+ *
+ * \note
+ * If you need to wake up exactly one other thread, then make sure to
+ * use the safe_signal() function instead.
+ *
+ * \exception cppthread_exception_invalid_error
+ * If one of the pthread system functions return an error, the function
+ * raises this exception.
+ *
+ * \sa safe_signal()
+ */
+void mutex::signal()
+{
+    int const err(pthread_cond_signal(&f_impl->f_condition));
+    if(err != 0)
+    {
+        log << log_level_t::fatal
+            << "a mutex condition signal generated error #"
+            << err
+            << end;
+        throw cppthread_invalid_error("pthread_cond_signal() failed");
+    }
+}
+
+
 /** \brief Signal a mutex.
  *
  * Our mutexes include a condition that get signaled by calling this
  * function. This function wakes up one listening thread.
  *
- * The function ensures that the mutex is locked before broadcasting
+ * The function ensures that the mutex is locked before sending
  * the signal so you do not have to lock the mutex yourself.
  *
  * \exception cppthread_exception_invalid_error
  * If one of the pthread system functions return an error, the function
  * raises this exception.
+ *
+ * \sa signal()
  */
-void mutex::signal()
+void mutex::safe_signal()
 {
     guard lock(*this);
 
@@ -679,11 +714,54 @@ void mutex::signal()
  * threads get awaken is unspecified.
  *
  * The function ensures that the mutex is locked before broadcasting
- * the signal so you do not have to lock the mutex yourself.
+ * the signal so you do not have to lock the mutex yourself. Note that
+ * is not required to lock a mutex before broadcasting a signal. The
+ * effects are similar.
  *
  * \exception cppthread_exception_invalid_error
  * If one of the pthread system functions return an error, the function
  * raises this exception.
+ *
+ * \sa broadcast()
+ */
+void mutex::safe_broadcast()
+{
+    guard lock(*this);
+
+    int const err(pthread_cond_broadcast(&f_impl->f_condition));
+    if(err != 0)
+    {
+        log << log_level_t::fatal
+            << "a mutex signal broadcast generated error #"
+            << err
+            << end;
+        throw cppthread_invalid_error("pthread_cond_broadcast() failed");
+    }
+}
+
+
+/** \brief Broadcast a mutex signal.
+ *
+ * Our mutexes include a condition that get signaled by calling this
+ * function. This function actually signals all the threads that are
+ * currently listening to the mutex signal. The order in which the
+ * threads get awaken is unspecified.
+ *
+ * The function ensures that the mutex is locked before broadcasting
+ * the signal so you do not have to lock the mutex yourself.
+ *
+ * \note
+ * We also offer a safe_broadcast(). If you expect absolutely all the
+ * other threads to receive the signal, then make sure to use the
+ * safe_broadcast() function instead. However, if you are already in
+ * a guarded block, then there is no need for an additional lock and
+ * this function will work exactly as expected.
+ *
+ * \exception cppthread_exception_invalid_error
+ * If one of the pthread system functions return an error, the function
+ * raises this exception.
+ *
+ * \sa safe_broadcast()
  */
 void mutex::broadcast()
 {
@@ -748,6 +826,26 @@ mutex *         g_system_mutex = nullptr;
  * it from the outside (there would be no need anyway). Just in case, if
  * called a second time, the function writes an error message and fails
  * with a call to std::terminate().
+ *
+ * Another way to safely create a new mutex is to use a static variable
+ * in a function. The initialization of that static variable will always
+ * be safe so that mutex will be available to all your threads even if
+ * you already had multiple threads the first time that function was called.
+ *
+ * \code
+ *     void myfunc()
+ *     {
+ *         static cppthread::mutex m = cppthread::mutex();
+ *
+ *         // here "m" is a safe to use mutex
+ *         cppthread::guard lock(m);
+ *
+ *         ...do atomic work here...
+ *     }
+ * \endcode
+ *
+ * You could even create a function which returns a reference to that
+ * local mutex (just make sure you don't copy that mutex).
  *
  * \note
  * Although this function gets called from the logger contructor, it is not

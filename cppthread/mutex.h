@@ -67,7 +67,9 @@ public:
     bool                timed_wait(uint64_t const usec);
     bool                dated_wait(uint64_t const usec);
     void                signal();
+    void                safe_signal();
     void                broadcast();
+    void                safe_broadcast();
 
 private:
     std::shared_ptr<detail::mutex_impl>
