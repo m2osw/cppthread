@@ -81,7 +81,7 @@ runner::runner(std::string const & name)
         pthread_setname_np(pthread_self(), name15.c_str());
 
         // but to really change the name in the comm file (and therefore
-        // htop ps, etc.) we further call the set_current_thread_name()
+        // htop, ps, etc.) we further call the set_current_thread_name()
         // function
         //
         set_current_thread_name(name15);
