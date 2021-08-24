@@ -33,6 +33,11 @@
 #include    "cppthread/log.h"
 
 
+// snapdev lib
+//
+#include    <snapdev/timespec_operations.h>
+
+
 // C lib
 //
 #include    <string.h>
@@ -506,30 +511,47 @@ void mutex::wait()
  *
  * \return true if the condition was raised, false if the wait timed out.
  */
-bool mutex::timed_wait(uint64_t const usecs)
+bool mutex::timed_wait(std::uint64_t const usecs)
 {
-    // For any mutex wait to work, we MUST have the
-    // mutex locked already and just one time.
-    //
-    // note: the 1 time is just for assurance that it will
-    //       work in most cases; it should work even when locked
-    //       multiple times, but it is less likely. For sure, it
-    //       has to be at least once.
-    //if(f_reference_count != 1UL)
-    //{
-    //  log << log_level_t::fatal
-    //         << "attempting to timed wait "
-    //         << usec
-    //         << " usec on a mutex when it is not locked exactly once, current count is "
-    //         << f_reference_count
-    //         << end;
-    //    throw cppthread_exception_not_locked_once_error();
-    //}
+    return timed_wait(timespec{
+              static_cast<time_t>(usecs / 1'000'000ULL)
+            , static_cast<long>((usecs % 1'000'000ULL) * 1'000ULL)
+        });
+}
 
+
+/** \brief Wait on a mutex condition with a time limit.
+ *
+ * At times it is useful to wait on a mutex to become available without
+ * polling the mutex, but only for some time. This function waits for
+ * the number of specified nano seconds. The function returns early if
+ * the condition was triggered. Otherwise it waits until the specified
+ * number of nano seconds elapsed and then returns.
+ *
+ * \warning
+ * This function cannot be called if the mutex is not locked or the
+ * wait will fail in unpredictable ways.
+ *
+ * \exception cppthread_exception_system_error
+ * This exception is raised if a function returns an unexpected error.
+ *
+ * \exception cppthread_exception_mutex_failed_error
+ * This exception is raised when the mutex wait function fails.
+ *
+ * \param[in] nsecs  The maximum number of nano seconds to wait until you
+ *                   receive the signal.
+ *
+ * \return true if the condition was raised, false if the wait timed out.
+ *
+ * \sa dated_wait(timespec date)
+ */
+bool mutex::timed_wait(timespec const & nsecs)
+{
     int err(0);
 
-    // get time now
-    struct timespec abstime;
+    // get clock time (a.k.a. now)
+    //
+    timespec abstime = {};
     if(clock_gettime(CLOCK_REALTIME, &abstime) != 0)
     {
         err = errno;
@@ -543,14 +565,16 @@ bool mutex::timed_wait(uint64_t const usecs)
     }
 
     // now + user specified usec
-    abstime.tv_sec += usecs / 1'000'000ULL;
-    std::uint64_t nanos(abstime.tv_nsec + (usecs % 1'000'000ULL) * 1'000ULL);
-    if(nanos > 1'000'000'000ULL)
-    {
-        ++abstime.tv_sec;
-        nanos -= 1'000'000'000ULL;
-    }
-    abstime.tv_nsec = static_cast<long>(nanos);
+    //
+    abstime += nsecs;
+    //abstime.tv_sec += usecs / 1'000'000ULL;
+    //std::uint64_t nanos(abstime.tv_nsec + (usecs % 1'000'000ULL) * 1'000ULL);
+    //if(nanos >= 1'000'000'000ULL)
+    //{
+    //    ++abstime.tv_sec;
+    //    nanos -= 1'000'000'000ULL;
+    //}
+    //abstime.tv_nsec = static_cast<long>(nanos);
 
     err = pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &abstime);
     if(err != 0)
@@ -596,7 +620,33 @@ bool mutex::timed_wait(uint64_t const usecs)
  * \return true if the condition occurs before the function times out,
  *         false if the function times out.
  */
-bool mutex::dated_wait(uint64_t usec)
+bool mutex::dated_wait(std::uint64_t const usec)
+{
+    return dated_wait(timespec{
+              static_cast<long>(usec / 1'000'000ULL)
+            , static_cast<long>((usec % 1'000'000ULL) * 1'000ULL)
+        });
+}
+
+
+/** \brief Wait on a mutex until the specified date.
+ *
+ * This function waits on the mutex condition to be signaled up until the
+ * specified date is passed.
+ *
+ * \warning
+ * This function cannot be called if the mutex is not locked or the
+ * wait will fail in unpredictable ways.
+ *
+ * \exception cppthread_exception_mutex_failed_error
+ * This exception is raised whenever the thread wait function fails.
+ *
+ * \param[in] date  The date when the mutex times out in nanoseconds.
+ *
+ * \return true if the condition occurs before the function times out,
+ *         false if the function times out.
+ */
+bool mutex::dated_wait(timespec const & date)
 {
     // For any mutex wait to work, we MUST have the
     // mutex locked already and just one time.
@@ -616,12 +666,7 @@ bool mutex::dated_wait(uint64_t usec)
     //    throw cppthread_exception_not_locked_once_error();
     //}
 
-    // setup the timeout date
-    struct timespec timeout;
-    timeout.tv_sec = static_cast<long>(usec / 1000000ULL);
-    timeout.tv_nsec = static_cast<long>((usec % 1000000ULL) * 1000ULL);
-
-    int const err(pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &timeout));
+    int const err(pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &date));
     if(err != 0)
     {
         if(err == ETIMEDOUT)
@@ -631,10 +676,15 @@ bool mutex::dated_wait(uint64_t usec)
 
         // an error occurred!
         log << log_level_t::error
-            << "a mutex conditional dated wait generated error #"
+            << "a mutex conditional wait generated error #"
             << err
             << " -- "
             << strerror(err)
+            << " (time out sec = "
+            << date.tv_sec
+            << ", nsec = "
+            << date.tv_nsec
+            << ")"
             << end;
         throw cppthread_mutex_failed_error("pthread_cond_timedwait() failed");
     }

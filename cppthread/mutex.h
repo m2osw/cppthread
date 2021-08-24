@@ -64,8 +64,10 @@ public:
     bool                try_lock();
     void                unlock();
     void                wait();
-    bool                timed_wait(uint64_t const usec);
-    bool                dated_wait(uint64_t const usec);
+    bool                timed_wait(std::uint64_t const usec);
+    bool                timed_wait(timespec const & usec);
+    bool                dated_wait(std::uint64_t const date);
+    bool                dated_wait(timespec const & date);
     void                signal();
     void                safe_signal();
     void                broadcast();
@@ -75,7 +77,7 @@ private:
     std::shared_ptr<detail::mutex_impl>
                         f_impl;
 
-    uint32_t            f_reference_count = 0;
+    std::uint32_t       f_reference_count = 0;
 };
 
 
