@@ -21,7 +21,7 @@
 /** \file
  * \brief Exceptions for the thread environment.
  *
- * This file includes the definitions of exceptions used by the Thread
+ * This file includes the definitions of exceptions used by the C++ Thread
  * environment.
  */
 

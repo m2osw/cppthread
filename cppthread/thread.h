@@ -103,6 +103,7 @@ private:
 int                 get_total_number_of_processors();
 int                 get_number_of_available_processors();
 pid_t               gettid();
+pid_t               get_pid_max();
 int                 set_current_thread_name(std::string const & name);
 int                 set_thread_name(pid_t tid, std::string const & name);
 std::string         get_current_thread_name();
