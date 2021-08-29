@@ -1,3 +1,9 @@
+cppthread (1.1.9.0~bionic) bionic; urgency=high
+
+  * Updated the tests to support the new libexcept change.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 28 Aug 2021 18:25:37 -0700
+
 cppthread (1.1.8.0~bionic) bionic; urgency=high
 
   * Added a get_boot_id() function (will be available to the logger).
