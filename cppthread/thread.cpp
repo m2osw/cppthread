@@ -1192,6 +1192,32 @@ std::string get_boot_id()
 }
 
 
+/** \brief Get the number of threads still not joined in this process.
+ *
+ * This function gets the number of currently \em running threads present
+ * in this process. The function is expected to return at least 1 since
+ * it includes the currently running thread (i.e. main thread).
+ *
+ * It can be called from a thread and is dynamic so the returned number
+ * can change on each call.
+ *
+ * \note
+ * If the /proc file system is somehow not accessible, then the function
+ * may return -1.
+ *
+ * \return The number of threads or -1 on an error.
+ */
+std::size_t get_thread_count()
+{
+    struct stat task;
+    if(stat("/proc/self/task", &task) != 0)
+    {
+        return -1;
+    }
+
+    return task.st_nlink - 2;
+}
+
 
 
 
