@@ -59,7 +59,7 @@ class fifo
 private:
     typedef std::deque<T>   items_t;
 
-    // void_t is C++17 so to compile on more system, we have our own definition
+    // void_t is C++17 so to compile on more systems, we have our own definition
     //
     template<typename ...> using void_t = void;
 
