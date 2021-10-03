@@ -1,6 +1,7 @@
 cppthread (1.1.10.0~bionic) bionic; urgency=high
 
   * Moved our get_thread_count() function to the cppthread library.
+  * Fixed fifo time out usage; it will now return if it times out.
 
  -- Alexis Wilke <alexis@m2osw.com>  Wed, 01 Sep 2021 15:24:15 -0700
 

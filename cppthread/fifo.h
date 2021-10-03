@@ -240,7 +240,10 @@ public:
             }
             else if(usecs > 0)
             {
-                timed_wait(usecs);
+                if(!timed_wait(usecs))
+                {
+                    break;
+                }
             }
             else // if(usecs == 0)
             {

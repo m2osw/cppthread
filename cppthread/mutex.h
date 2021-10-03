@@ -65,7 +65,7 @@ public:
     void                unlock();
     void                wait();
     bool                timed_wait(std::uint64_t const usec);
-    bool                timed_wait(timespec const & usec);
+    bool                timed_wait(timespec const & nsec);
     bool                dated_wait(std::uint64_t const date);
     bool                dated_wait(timespec const & date);
     void                signal();
