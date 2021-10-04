@@ -576,7 +576,10 @@ bool mutex::timed_wait(timespec const & nsecs)
     //}
     //abstime.tv_nsec = static_cast<long>(nanos);
 
-    err = pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &abstime);
+    err = pthread_cond_timedwait(
+              &f_impl->f_condition
+            , &f_impl->f_mutex
+            , &abstime);
     if(err != 0)
     {
         if(err == ETIMEDOUT)
@@ -666,7 +669,10 @@ bool mutex::dated_wait(timespec const & date)
     //    throw cppthread_exception_not_locked_once_error();
     //}
 
-    int const err(pthread_cond_timedwait(&f_impl->f_condition, &f_impl->f_mutex, &date));
+    int const err(pthread_cond_timedwait(
+              &f_impl->f_condition
+            , &f_impl->f_mutex
+            , &date));
     if(err != 0)
     {
         if(err == ETIMEDOUT)
