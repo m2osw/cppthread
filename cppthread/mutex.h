@@ -32,6 +32,7 @@
 
 // C++ lib
 //
+#include    <cstdint>
 #include    <memory>
 #include    <vector>
 
