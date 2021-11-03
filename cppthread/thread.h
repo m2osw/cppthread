@@ -115,6 +115,7 @@ process_ids_t       get_thread_ids(pid_t pid = -1);
 bool                is_process_running(pid_t pid);
 std::string         get_boot_id();
 std::size_t         get_thread_count();
+bool                is_using_vdso();
 
 
 } // namespace cppthread

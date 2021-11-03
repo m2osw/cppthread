@@ -47,6 +47,7 @@
 // C lib
 //
 #include    <signal.h>
+#include    <sys/auxv.h>
 #include    <sys/stat.h>
 #include    <sys/syscall.h>
 #include    <sys/sysinfo.h>
@@ -1219,6 +1220,35 @@ std::size_t get_thread_count()
 }
 
 
+/** \brief Certain functions may be implemented using the vDSO library.
+ *
+ * The vDSO library is a Linux extension using a small library which
+ * gets loaded at the time a new process gets loaded. This library is
+ * common to all processes and allows for some functions such as
+ * gettimeofday(2) to be implemented without having to do a kernel
+ * system call. This improves speed dramatically.
+ *
+ * The side effect is that it can affect the functionality of some
+ * calls such as time(2), because the time function can end up being
+ * off by up to 1 second.
+ *
+ * If this function returns true, then know that your implementation
+ * of the time(2) function may not work exactly as expected. In that
+ * case, it is important that you consider using clock_gettime(2)
+ * instead. That latter function will properly adjust the second
+ * if it would otherwise be off.
+ *
+ * \return true if the vDSO is in use.
+ */
+bool is_using_vdso()
+{
+    // the call to getauxval() is only required once; the result can't change
+    // within one process run (however, it has to be different on each run
+    // to make it secure)
+    //
+    static auto g_vdso(getauxval(AT_SYSINFO_EHDR));
+    return g_vdso != 0;
+}
 
 
 

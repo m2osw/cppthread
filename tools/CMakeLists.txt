@@ -97,4 +97,29 @@ install(
 )
 
 
+##
+## test for the vDSO
+##
+project(has-vdso)
+
+add_executable(${PROJECT_NAME}
+    has_vdso.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}
+    cppthread
+)
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+
+    COMPONENT
+        runtime
+)
+
+
 # vim: ts=4 sw=4 et nocindent
