@@ -41,7 +41,9 @@ enum class log_level_t
     info,
     warning,
     error,
-    fatal
+    fatal,
+
+    LOG_LEVEL_SIZE
 };
 
 std::string to_string(log_level_t level);
@@ -69,12 +71,17 @@ public:
         return *this;
     }
 
+    std::uint32_t       get_counter(log_level_t level) const;
+    std::uint32_t       get_errors() const;
+    std::uint32_t       get_warnings() const;
+
 private:
     static void         lock();
     static void         unlock();
 
     log_level_t         f_level = log_level_t::error;
     std::stringstream   f_log = std::stringstream();
+    std::uint32_t       f_counters[static_cast<int>(log_level_t::LOG_LEVEL_SIZE)] = {};
 };
 
 

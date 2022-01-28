@@ -235,7 +235,7 @@ void logger::lock()
     int err(pthread_mutex_lock(&g_log_mutex));
     if(err != 0)
     {
-        std::cerr << "fatal: a mutex lock generated error #"
+        std::cerr << "fatal: the mutex lock in cppthread::logger::lock() generated error #"
                   << err
                   << std::endl;
         pthread_mutex_unlock(&g_log_mutex);
@@ -387,8 +387,18 @@ void logger::unlock()
  */
 logger & logger::operator << (log_level_t const & level)
 {
+    if(level < log_level_t::debug
+    || level > log_level_t::fatal)
+    {
+        throw cppthread_invalid_log_level(
+                      "unknown log level ("
+                    + std::to_string(static_cast<int>(level))
+                    + ").");
+    }
+
     lock();
     f_level = level;
+    ++f_counters[static_cast<int>(level)];
     return *this;
 }
 
@@ -409,6 +419,71 @@ logger & logger::operator << (logger & (*func)(logger &))
     lock();
     func(*this);
     return *this;
+}
+
+
+/** \brief Get one of the level counters.
+ *
+ * WHenever a log is sent to the cppthread logger, one of its counter
+ * gets incremented by 1. This is useful if you want to know whether
+ * error messages were sent to the logger, see the get_errors() function
+ * too as it includes a total of all the errors that happened.
+ *
+ * This function is useful to check the number of debug and info messages
+ * that were processed.
+ *
+ * \param[in] level  The level to get the counter from.
+ *
+ * \return The number of times that level received a log message.
+ *
+ * \sa get_errors()
+ * \sa get_warnings()
+ */
+std::uint32_t logger::get_counter(log_level_t level) const
+{
+    if(level < log_level_t::debug
+    || level > log_level_t::fatal)
+    {
+        throw cppthread_invalid_log_level(
+                      "unknown log level ("
+                    + std::to_string(static_cast<int>(level))
+                    + ").");
+    }
+
+    return f_counters[static_cast<int>(level)];
+}
+
+
+/** \brief Get the number of errors that occurred so far.
+ *
+ * This function returns the total number of errors and fatal errors that were
+ * sent to the cppthread logger.
+ *
+ * \return The number of errors generated so far.
+ *
+ * \sa get_counter()
+ * \sa get_warnings()
+ */
+std::uint32_t logger::get_errors() const
+{
+    return f_counters[static_cast<int>(log_level_t::error)]
+                + f_counters[static_cast<int>(log_level_t::fatal)];
+}
+
+
+/** \brief Get the number of warnings that occurred so far.
+ *
+ * This function returns the number of warnings that were sent to the
+ * cppthread logger.
+ *
+ * \return The number of warnings generated so far.
+ *
+ * \sa get_counter()
+ * \sa get_errors()
+ */
+std::uint32_t logger::get_warnings() const
+{
+    return f_counters[static_cast<int>(log_level_t::warning)];
 }
 
 
@@ -492,6 +567,9 @@ std::string to_string(log_level_t level)
 
     case log_level_t::fatal:
         return "fatal";
+
+    case log_level_t::LOG_LEVEL_SIZE:
+        break;
 
     }
 
