@@ -551,30 +551,11 @@ bool mutex::timed_wait(timespec const & nsecs)
 
     // get clock time (a.k.a. now)
     //
-    timespec abstime = {};
-    if(clock_gettime(CLOCK_REALTIME, &abstime) != 0)
-    {
-        err = errno;
-        log << log_level_t::fatal
-            << "gettimeofday() failed with errno: "
-            << err
-            << " -- "
-            << strerror(err)
-            << end;
-        throw cppthread_system_error("gettimeofday() failed");
-    }
+    snapdev::timespec_ex abstime(snapdev::timespec_ex::gettime());
 
-    // now + user specified usec
+    // now + user specified nsecs
     //
     abstime += nsecs;
-    //abstime.tv_sec += usecs / 1'000'000ULL;
-    //std::uint64_t nanos(abstime.tv_nsec + (usecs % 1'000'000ULL) * 1'000ULL);
-    //if(nanos >= 1'000'000'000ULL)
-    //{
-    //    ++abstime.tv_sec;
-    //    nanos -= 1'000'000'000ULL;
-    //}
-    //abstime.tv_nsec = static_cast<long>(nanos);
 
     err = pthread_cond_timedwait(
               &f_impl->f_condition

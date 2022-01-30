@@ -1100,10 +1100,10 @@ process_ids_t get_thread_ids(pid_t pid)
     pattern += std::to_string(pid);
     pattern += "/task/*";
 
-    snap::glob_to_list<std::vector<std::string>> glob;
+    snapdev::glob_to_list<std::vector<std::string>> glob;
     if(glob.read_path<
-              snap::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
-            , snap::glob_to_list_flag_t::GLOB_FLAG_ONLY_DIRECTORIES>(pattern))
+              snapdev::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+            , snapdev::glob_to_list_flag_t::GLOB_FLAG_ONLY_DIRECTORIES>(pattern))
     {
         for(auto s : glob)
         {

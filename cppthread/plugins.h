@@ -370,7 +370,7 @@ public:
 template<typename T, typename F, class ...ARGS>
 constexpr typename std::enable_if<std::is_same<T, F>::value, typename T::value_t>::type find_plugin_information(F first, ARGS ...args)
 {
-    snap::NOT_USED(args...);
+    snapdev::NOT_USED(args...);
     return first.get();
 }
 
@@ -378,7 +378,7 @@ constexpr typename std::enable_if<std::is_same<T, F>::value, typename T::value_t
 template<typename T, typename F, class ...ARGS>
 constexpr typename std::enable_if<!std::is_same<T, F>::value, typename T::value_t>::type find_plugin_information(F first, ARGS ...args)
 {
-    snap::NOT_USED(first);
+    snapdev::NOT_USED(first);
     return find_plugin_information<T>(args...);
 }
 
@@ -398,7 +398,7 @@ typename std::enable_if<std::is_same<T, F>::value, string_set_t>::type find_plug
 template<typename T, typename F>
 typename std::enable_if<!std::is_same<T, F>::value, string_set_t>::type find_plugin_set(F first)
 {
-    snap::NOT_USED(first);
+    snapdev::NOT_USED(first);
     return string_set_t();
 }
 
@@ -415,7 +415,7 @@ typename std::enable_if<std::is_same<T, F>::value && (sizeof...(ARGS) > 0), stri
 template<typename T, typename F, class ...ARGS>
 typename std::enable_if<!std::is_same<T, F>::value && (sizeof...(ARGS) > 0), string_set_t>::type find_plugin_set(F first, ARGS ...args)
 {
-    snap::NOT_USED(first);
+    snapdev::NOT_USED(first);
     return find_plugin_set<T>(args...);
 }
 

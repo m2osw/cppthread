@@ -567,7 +567,7 @@ string_set_t plugin::suggestions() const
  */
 void plugin::bootstrap(void * data)
 {
-    snap::NOT_USED(data);
+    snapdev::NOT_USED(data);
 }
 
 
@@ -714,7 +714,7 @@ plugin_paths::path_t plugin_paths::canonicalize(path_t const & path)
     // canonicalize the path (exactly one "/" between each segment)
     //
     std::vector<std::string> segments;
-    snap::tokenize_string(segments, path, "/", true);
+    snapdev::tokenize_string(segments, path, "/", true);
 
     if(segments.empty())
     {
@@ -764,8 +764,8 @@ plugin_paths::path_t plugin_paths::canonicalize(path_t const & path)
     }
 
     return is_root
-            ? '/' + snap::join_strings(segments, "/")
-            : snap::join_strings(segments, "/");
+            ? '/' + snapdev::join_strings(segments, "/")
+            : snapdev::join_strings(segments, "/");
 }
 
 
@@ -836,7 +836,7 @@ void plugin_paths::erase(std::string const & path)
 void plugin_paths::add(std::string const & set)
 {
     std::vector<std::string> paths;
-    snap::tokenize_string(paths, set, ":", true, {' ', '\t', '\r', '\n'});
+    snapdev::tokenize_string(paths, set, ":", true, {' ', '\t', '\r', '\n'});
     for(auto const & p : paths)
     {
         push(p);
@@ -1304,7 +1304,7 @@ void plugin_names::push(name_t const & name)
 void plugin_names::add(std::string const & set)
 {
     std::vector<std::string> names;
-    snap::tokenize_string(names, set, ",", true, {' ', '\t', '\r', '\n'});
+    snapdev::tokenize_string(names, set, ",", true, {' ', '\t', '\r', '\n'});
     for(auto const & n : names)
     {
         push(n);
@@ -1377,17 +1377,17 @@ plugin_names::names_t plugin_names::names() const
  */
 void plugin_names::find_plugins(name_t const & prefix, name_t const & suffix)
 {
-    snap::glob_to_list<std::vector<std::string>> glob;
+    snapdev::glob_to_list<std::vector<std::string>> glob;
 
     std::size_t max(f_paths.size());
     for(std::size_t idx(0); idx < max; ++idx)
     {
         glob.read_path<
-                  snap::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
-                , snap::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/" + prefix + "*" + suffix + ".so");
+                  snapdev::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/" + prefix + "*" + suffix + ".so");
         glob.read_path<
-                  snap::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
-                , snap::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/*/" + prefix + "*" + suffix + ".so");
+                  snapdev::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/*/" + prefix + "*" + suffix + ".so");
     }
 
     for(auto n : glob)
