@@ -48,6 +48,7 @@
 
 // C++ lib
 //
+#include    <cstring>
 #include    <iostream>
 
 
@@ -229,6 +230,10 @@ logger::logger()
  * locked, it is like a passthrough. If another thread already acquired
  * the lock, then the function blocks until the other thread is done
  * with the logger.
+ *
+ * \todo
+ * This locking system is not exception safe. If one of the functions
+ * called to generate the log message throws, then we will stay locked.
  */
 void logger::lock()
 {
@@ -308,6 +313,9 @@ void logger::lock()
 
     if(g_log_locked)
     {
+        // it was already locked, so unlock (i.e. we only want to keep one
+        // lock turned on at a time)
+        //
         err = pthread_mutex_unlock(&g_log_recursive_mutex);
         if(err != 0)
         {
@@ -422,6 +430,21 @@ logger & logger::operator << (logger & (*func)(logger &))
 }
 
 
+/** \brief Reset all the log message counters to zero.
+ *
+ * This function resets all the log message counters to zero. This is useful
+ * if you run in a server and want to count the logs for one run of a process
+ * opposed to forever while running.
+ *
+ * \todo
+ * The counter functions are not thread safe.
+ */
+void logger::reset_counters()
+{
+    std::memset(f_counters, 0, sizeof(f_counters));
+}
+
+
 /** \brief Get one of the level counters.
  *
  * WHenever a log is sent to the cppthread logger, one of its counter
@@ -431,6 +454,9 @@ logger & logger::operator << (logger & (*func)(logger &))
  *
  * This function is useful to check the number of debug and info messages
  * that were processed.
+ *
+ * \todo
+ * The counter functions are not thread safe.
  *
  * \param[in] level  The level to get the counter from.
  *
@@ -459,6 +485,9 @@ std::uint32_t logger::get_counter(log_level_t level) const
  * This function returns the total number of errors and fatal errors that were
  * sent to the cppthread logger.
  *
+ * \todo
+ * The counter functions are not thread safe.
+ *
  * \return The number of errors generated so far.
  *
  * \sa get_counter()
@@ -467,7 +496,7 @@ std::uint32_t logger::get_counter(log_level_t level) const
 std::uint32_t logger::get_errors() const
 {
     return f_counters[static_cast<int>(log_level_t::error)]
-                + f_counters[static_cast<int>(log_level_t::fatal)];
+         + f_counters[static_cast<int>(log_level_t::fatal)];
 }
 
 
@@ -475,6 +504,9 @@ std::uint32_t logger::get_errors() const
  *
  * This function returns the number of warnings that were sent to the
  * cppthread logger.
+ *
+ * \todo
+ * The counter functions are not thread safe.
  *
  * \return The number of warnings generated so far.
  *

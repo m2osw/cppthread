@@ -71,6 +71,7 @@ public:
         return *this;
     }
 
+    void                reset_counters();
     std::uint32_t       get_counter(log_level_t level) const;
     std::uint32_t       get_errors() const;
     std::uint32_t       get_warnings() const;
