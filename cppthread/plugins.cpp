@@ -911,6 +911,10 @@ plugin_names::plugin_names(plugin_paths const & paths, bool prevent_script_names
  * \p script_names parameter of the constructor was set to true. So plugins
  * naming a keyword are rejected.
  *
+ * \note
+ * I considered accepting dashes (`-`) as well, but decided not to. Make
+ * sure to use the underscore (`_`) if you want a separator.
+ *
  * \param[in] name  The string to verify as a plugin name.
  *
  * \return true if the name is considered valid.
@@ -922,6 +926,10 @@ bool plugin_names::validate(name_t const & name)
         return false;
     }
 
+    // No dashes! That's because we need to compare and we did not want
+    // to compare with '-' == '_' (it's just too annoying to maintain).
+    // Just make sure that you use '_' in your plugin names...
+    //
     if(name[0] != '_'
     && (name[0] < 'a' || name[0] > 'z')
     && (name[0] < 'A' || name[0] > 'Z'))

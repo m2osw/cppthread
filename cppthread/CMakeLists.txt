@@ -81,6 +81,7 @@ install(
         guard.h
         log.h
         mutex.h
+        plugins.h
         runner.h
         thread.h
         worker.h
