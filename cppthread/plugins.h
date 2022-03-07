@@ -252,7 +252,7 @@ class plugin_description
 {
 public:
     constexpr plugin_description()
-        : plugin_definition_value<char const *>(nullptr)
+        : plugin_definition_value<char const *>("")
     {
     }
 
@@ -268,7 +268,7 @@ class plugin_help_uri
 {
 public:
     constexpr plugin_help_uri()
-        : plugin_definition_value<char const *>(nullptr)
+        : plugin_definition_value<char const *>("")
     {
     }
 
@@ -284,7 +284,7 @@ class plugin_icon
 {
 public:
     constexpr plugin_icon()
-        : plugin_definition_value<char const *>(nullptr)
+        : plugin_definition_value<char const *>("")
     {
     }
 
@@ -299,11 +299,6 @@ class plugin_categorization_tag
     : public plugin_definition_value<char const *>
 {
 public:
-    //constexpr plugin_categorization_tag()
-    //    : plugin_definition_value<char const *>()
-    //{
-    //}
-
     template<int N>
     constexpr plugin_categorization_tag(char const (&tag)[N])
         : plugin_definition_value<char const *>(validate_name(tag))
@@ -316,11 +311,6 @@ class plugin_dependencies
     : public plugin_definition_value<char const *>
 {
 public:
-    constexpr plugin_dependencies()
-        : plugin_definition_value<char const *>(nullptr)
-    {
-    }
-
     template<int N>
     constexpr plugin_dependencies(char const (&dependencies)[N])
         : plugin_definition_value<char const *>(validate_name(dependencies))
@@ -333,11 +323,6 @@ class plugin_conflicts
     : public plugin_definition_value<char const *>
 {
 public:
-    constexpr plugin_conflicts()
-        : plugin_definition_value<char const *>(nullptr)
-    {
-    }
-
     template<int N>
     constexpr plugin_conflicts(char const (&conflicts)[N])
         : plugin_definition_value<char const *>(validate_name(conflicts))
@@ -350,11 +335,6 @@ class plugin_suggestions
     : public plugin_definition_value<char const *>
 {
 public:
-    constexpr plugin_suggestions()
-        : plugin_definition_value<char const *>(nullptr)
-    {
-    }
-
     template<int N>
     constexpr plugin_suggestions(char const (&suggestions)[N])
         : plugin_definition_value<char const *>(validate_name(suggestions))

@@ -1581,9 +1581,11 @@ bool plugin_collection::load_plugins()
             if(p == nullptr)
             {
                 log << cppthread::log_level_t::fatal
-                    << "plugin \""
+                    << "loaded file \""
+                    << name_filename.second
+                    << "\" for plugin \""
                     << name_filename.first
-                    << "\" not found."
+                    << "\", but the plugin was not found (name mismatch? plugin not defined?)."
                     << end;
                 good = false;
                 continue;

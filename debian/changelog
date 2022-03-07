@@ -6,6 +6,8 @@ cppthread (1.1.12.0~bionic) bionic; urgency=high
   * Changed version verification, if negative, fail.
   * Added the GLOB_FLAG_EMPTY to allow for no files when globbing.
   * Actually install the plugins.h header file.
+  * Made the plugin_definition structs work properly when undefined.
+  * Enhanced error message if you created a plugin but no such class factory.
   * Link the SNAPCATCH2 libray to the testme plugin (although at this point
     that's not useful since it is considered _detached_).
   * Various clean ups (docs, function order).
