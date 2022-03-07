@@ -56,7 +56,16 @@ CPPTHREAD_PLUGIN_END(testme)
 void testme::bootstrap(void * data)
 {
     data_t * d(reinterpret_cast<data_t *>(data));
-    CATCH_CHECK(d->f_value == 0xA987);
+
+    // somehow, the test environment thinks we're not inside the
+    // CATCH_TEST_CASE() when any functions here gets called
+    //
+    //CATCH_CHECK(d->f_value == 0xA987);
+
+    if(d->f_value != 0xA987)
+    {
+        throw std::runtime_error("testme: plugin called with an unexpected data pointer.");
+    }
 
     plugin::bootstrap(data);
 }
@@ -64,7 +73,7 @@ void testme::bootstrap(void * data)
 
 std::string testme::it_worked()
 {
-    return std::string("it worked, didn't it?");
+    return std::string("testme:plugin: it worked, it was called!");
 }
 
 

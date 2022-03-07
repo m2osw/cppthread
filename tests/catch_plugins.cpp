@@ -794,9 +794,10 @@ CATCH_TEST_CASE("plugin_collection", "[plugins] [collection]")
 
         cppthread::string_set_t suggestions(r->suggestions());
 
-        // TODO: this requires a signal...
-        //std::string const msg(r->it_worked());
-        //CATCH_CHECK(msg == "it worked, didn't it?");
+        // WARNING: for it_worked() to compile, it needs to be a virtual
+        //
+        std::string const msg(r->it_worked());
+        CATCH_CHECK(msg == "testme:plugin: it worked, it was called!");
     }
     CATCH_END_SECTION()
 }

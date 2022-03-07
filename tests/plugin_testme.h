@@ -47,7 +47,7 @@ public:
     CPPTHREAD_PLUGIN_DEFAULTS(testme)
 
     virtual void        bootstrap(void * data);
-    std::string         it_worked();
+    virtual std::string it_worked();
 
 private:
 };

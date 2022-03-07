@@ -105,9 +105,9 @@ constexpr time_t validate_date(time_t date)
 template<typename T>
 constexpr void validate_version(T const major, T const minor)
 {
-    if(major == 0 && minor == 0)
+    if(major <= 0 && minor <= 0)
     {
-        throw cppthread_logic_error("the plugin version cannot be 0.0.");
+        throw cppthread_logic_error("the plugin version cannot be 0.0 or use negative numbers.");
     }
 }
 

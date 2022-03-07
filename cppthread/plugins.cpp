@@ -25,7 +25,7 @@
 #include    "cppthread/guard.h"
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/glob_to_list.h>
 #include    <snapdev/join_strings.h>
@@ -33,7 +33,7 @@
 #include    <snapdev/tokenize_string.h>
 
 
-// C lib
+// C
 //
 #include    <dlfcn.h>
 
@@ -801,23 +801,6 @@ void plugin_paths::push(path_t const & path)
 }
 
 
-/** \brief Erase the specified path from this list.
- *
- * This function searches for the specified \p path and remove it from the
- * list. If not present in the list, then nothing happens.
- *
- * \param[in] path  The path to be removed.
- */
-void plugin_paths::erase(std::string const & path)
-{
-    auto it(std::find(f_paths.begin(), f_paths.end(), path));
-    if(it != f_paths.end())
-    {
-        f_paths.erase(it);
-    }
-}
-
-
 /** \brief Add one set of paths to this set of paths.
  *
  * This function is used to add a set of colon separated paths defined in
@@ -840,6 +823,23 @@ void plugin_paths::add(std::string const & set)
     for(auto const & p : paths)
     {
         push(p);
+    }
+}
+
+
+/** \brief Erase the specified path from this list.
+ *
+ * This function searches for the specified \p path and remove it from the
+ * list. If not present in the list, then nothing happens.
+ *
+ * \param[in] path  The path to be removed.
+ */
+void plugin_paths::erase(std::string const & path)
+{
+    auto it(std::find(f_paths.begin(), f_paths.end(), path));
+    if(it != f_paths.end())
+    {
+        f_paths.erase(it);
     }
 }
 
@@ -1191,7 +1191,7 @@ plugin_names::filename_t plugin_names::to_filename(name_t const & name)
 
     if(max == 0)
     {
-        // if not paths were supplied, try the local folder
+        // if no paths were supplied, try the local folder
         //
         return check("./");
     }
@@ -1342,7 +1342,7 @@ plugin_names::names_t plugin_names::names() const
  * There are two ways that this class can be used:
  *
  * * First, the user specifies an exact list of names. In that case, you want
- * to use the add_name() function to add all the names from your list.
+ * to use the add_name() function to add all the names from the user's list.
  *
  * * Second, the user adds the plugins to a directory and the idea is to
  * have all of them loaded. In this second case, you use the find_plugins()
@@ -1368,6 +1368,10 @@ plugin_names::names_t plugin_names::names() const
  * So calling this function with the prefix set to `output_` will only load
  * these four plugins and ignore the others (i.e. the `input_`, for example).
  *
+ * Note that the technical decoration is implemented internally. In other
+ * words, the "lib" prefix and ".so" suffix are already handled by this
+ * function. You do not need to use these at all.
+ *
  * \warning
  * You must call the add_path() function with all the paths that you want
  * to support before calling this function.
@@ -1384,13 +1388,23 @@ void plugin_names::find_plugins(name_t const & prefix, name_t const & suffix)
     {
         glob.read_path<
                   snapdev::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_EMPTY
                 , snapdev::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/" + prefix + "*" + suffix + ".so");
         glob.read_path<
                   snapdev::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_EMPTY
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/lib" + prefix + "*" + suffix + ".so");
+        glob.read_path<
+                  snapdev::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_EMPTY
                 , snapdev::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/*/" + prefix + "*" + suffix + ".so");
+        glob.read_path<
+                  snapdev::glob_to_list_flag_t::GLOB_FLAG_IGNORE_ERRORS
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_EMPTY
+                , snapdev::glob_to_list_flag_t::GLOB_FLAG_PERIOD>(f_paths.at(idx) + "/*/lib" + prefix + "*" + suffix + ".so");
     }
 
-    for(auto n : glob)
+    for(auto const & n : glob)
     {
         push(n);
     }
