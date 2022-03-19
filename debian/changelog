@@ -11,6 +11,7 @@ cppthread (1.1.12.0~bionic) bionic; urgency=high
   * Link the SNAPCATCH2 libray to the testme plugin (although at this point
     that's not useful since it is considered _detached_).
   * Various clean ups (docs, function order).
+  * Added a plugin::do_update() function to better support snapwebsites.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Mar 2022 11:48:57 -0800
 

@@ -153,6 +153,7 @@ struct plugin_definition
     string_set_t                        f_dependencies = string_set_t();
     string_set_t                        f_conflicts = string_set_t();
     string_set_t                        f_suggestions = string_set_t();
+    std::string                         f_settings_path = std::string();
 };
 
 
@@ -343,6 +344,23 @@ public:
 };
 
 
+class plugin_settings_path
+    : public plugin_definition_value<char const *>
+{
+public:
+    constexpr plugin_settings_path()
+        : plugin_definition_value<char const *>("")
+    {
+    }
+
+    template<int N>
+    constexpr plugin_settings_path(char const (&settings_path)[N])
+        : plugin_definition_value<char const *>(validate_name(settings_path))
+    {
+    }
+};
+
+
 
 
 
@@ -419,6 +437,7 @@ constexpr plugin_definition define_plugin(ARGS ...args)
         .f_dependencies =           find_plugin_set<plugin_dependencies>(args...),
         .f_conflicts =              find_plugin_set<plugin_conflicts>(args...),
         .f_suggestions =            find_plugin_set<plugin_suggestions>(args...),
+        .f_settings_path =          find_plugin_information<plugin_settings_path>(args..., plugin_settings_path()),
     };
 #pragma GCC diagnostic pop
 
@@ -527,8 +546,10 @@ public:
     string_set_t                        dependencies() const;
     string_set_t                        conflicts() const;
     string_set_t                        suggestions() const;
+    std::string                         settings_path() const;
 
     virtual void                        bootstrap(void * data);
+    virtual time_t                      do_update(time_t last_updated);
 
 private:
     friend class detail::plugin_repository;

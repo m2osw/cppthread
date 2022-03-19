@@ -548,6 +548,20 @@ string_set_t plugin::suggestions() const
 }
 
 
+/** \brief Path to this specific plugin settings.
+ *
+ * This function returns a path to the plugin settings. The settings may
+ * be in a database or on disk. The path will depend on how the plugins
+ * are used.
+ *
+ * \return The path to this plugin settings.
+ */
+std::string plugin::settings_path() const
+{
+    return f_factory.definition().f_settings_path;
+}
+
+
 /** \brief Give the plugin a change to properly initialize itself.
  *
  * The order in which plugins are loaded is generally just alphabetical
@@ -568,6 +582,31 @@ string_set_t plugin::suggestions() const
 void plugin::bootstrap(void * data)
 {
     snapdev::NOT_USED(data);
+}
+
+
+/** \brief Allow for updates.
+ *
+ * After a website loads a plugin, it can call this function to update the
+ * database to the lastest version of the plugin. In most cases, no such
+ * function is required, but there are a few cases where it is a must.
+ *
+ * The input and output are dates in seconds of when the plugin was updated.
+ * If the plugin was not updated, then nothing happens in the function
+ * and the same date is returned.
+ *
+ * If multiple updates happened then all of them get applied.
+ *
+ * \note
+ * The default implementation does nothing.
+ *
+ * \param[in] last_updated  The last time it was updated.
+ *
+ * \return The date of the last update.
+ */
+time_t plugin::do_update(time_t last_updated)
+{
+    return last_updated;
 }
 
 
