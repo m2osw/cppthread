@@ -82,6 +82,7 @@ install(
         log.h
         mutex.h
         plugins.h
+        plugins_signals.h
         runner.h
         thread.h
         worker.h
