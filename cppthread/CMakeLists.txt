@@ -35,6 +35,12 @@ add_library(${PROJECT_NAME} SHARED
     log.cpp
     mutex.cpp
     plugins.cpp
+    plugins_collection.cpp
+    plugins_factory.cpp
+    plugins_names.cpp
+    plugins_paths.cpp
+    plugins_repository.cpp
+    plugins_server.cpp
     runner.cpp
     thread.cpp
     version.cpp
@@ -82,7 +88,13 @@ install(
         log.h
         mutex.h
         plugins.h
+        plugins_collection.h
+        plugins_factory.h
+        plugins_names.h
+        plugins_paths.h
+        plugins_server.h
         plugins_signals.h
+        plugins_utils.h
         runner.h
         thread.h
         worker.h

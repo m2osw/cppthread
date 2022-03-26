@@ -33,6 +33,8 @@ if(SnapCatch2_FOUND)
         catch_fifo.cpp
         catch_plugins.cpp
         catch_version.cpp
+
+        plugin_daemon.cpp
     )
 
     target_include_directories(${PROJECT_NAME}

@@ -20,7 +20,7 @@
 
 // cppthread lib
 //
-#include    <cppthread/plugins.h>
+#include    <cppthread/plugins_server.h>
 
 
 
@@ -28,22 +28,20 @@ namespace optional_namespace
 {
 
 
-
-/** \brief A test plugin class.
- *
- * All plugins must be derived from cppthread::plugin and include the
- * CPPTHREAD_PLUGIN_DEFAULTS() macro to generate the default header data.
- */
-class testme
-    : public cppthread::plugin
+class daemon
+    : public cppthread::server
 {
 public:
-    CPPTHREAD_PLUGIN_DEFAULTS(testme);
+    // in most cases our daemons are given the argc/argv parameters from
+    // main() and the daemon parses those with advgetopt
+    //
+    daemon(int argc, char * argv[]);
 
-    virtual void        bootstrap();
-    virtual std::string it_worked();
+    // we already have the plugin defaults in the cppthread::server
+    //CPPTHREAD_PLUGIN_DEFAULTS(daemon);
+    typedef std::shared_ptr<daemon>     pointer_t;
 
-private:
+    int f_value = 0xA987;
 };
 
 

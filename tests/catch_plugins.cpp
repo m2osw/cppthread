@@ -21,12 +21,14 @@
 //
 #include    "catch_main.h"
 
+#include    "plugin_daemon.h"
 #include    "plugin_testme.h"
 
 
 // cppthread lib
 //
 #include    <cppthread/plugins.h>
+#include    <cppthread/plugins_collection.h>
 
 
 // snapdev lib
@@ -49,20 +51,6 @@
 // last include
 //
 #include    <snapdev/poison.h>
-
-
-namespace optional_namespace
-{
-
-daemon::daemon(int argc, char * argv[])
-{
-    // this is where we would parse argc/argv
-    CATCH_REQUIRE(argc == 1);
-    CATCH_REQUIRE(strcmp(argv[0], "/usr/sbin/daemon") == 0);
-    CATCH_REQUIRE(argv[1] == nullptr);
-}
-
-} // namespace optional_namespace
 
 
 

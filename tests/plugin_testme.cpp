@@ -21,8 +21,14 @@
 //
 #include    "plugin_testme.h"
 
+#include    "plugin_daemon.h"
+
 #include    "catch_main.h"
 
+
+// cppthread
+//
+#include    "cppthread/plugins_collection.h"
 
 
 
@@ -56,7 +62,7 @@ CPPTHREAD_PLUGIN_END(testme)
 void testme::bootstrap()
 {
     //data_t * d(reinterpret_cast<data_t *>(data));
-    optional_namespace::daemon::pointer_t d(collection()->get_server<optional_namespace::daemon>());
+    daemon::pointer_t d(collection()->get_server<daemon>());
 
     // somehow, the test environment thinks we're not inside the
     // CATCH_TEST_CASE() when any functions here gets called

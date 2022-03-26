@@ -16,37 +16,29 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#pragma once
 
-// cppthread lib
+// self
 //
-#include    <cppthread/plugins.h>
+#include    "catch_main.h"
 
+#include    "plugin_daemon.h"
+
+
+// last include
+//
+#include    <snapdev/poison.h>
 
 
 namespace optional_namespace
 {
 
-
-
-/** \brief A test plugin class.
- *
- * All plugins must be derived from cppthread::plugin and include the
- * CPPTHREAD_PLUGIN_DEFAULTS() macro to generate the default header data.
- */
-class testme
-    : public cppthread::plugin
+daemon::daemon(int argc, char * argv[])
 {
-public:
-    CPPTHREAD_PLUGIN_DEFAULTS(testme);
+    // this is where we would parse argc/argv
+    CATCH_REQUIRE(argc == 1);
+    CATCH_REQUIRE(strcmp(argv[0], "/usr/sbin/daemon") == 0);
+    CATCH_REQUIRE(argv[1] == nullptr);
+}
 
-    virtual void        bootstrap();
-    virtual std::string it_worked();
-
-private:
-};
-
-
-
-} // optional_namespace namespace
+} // namespace optional_namespace
 // vim: ts=4 sw=4 et
