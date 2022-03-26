@@ -51,6 +51,18 @@
 #include    <snapdev/poison.h>
 
 
+namespace optional_namespace
+{
+
+daemon::daemon(int argc, char * argv[])
+{
+    // this is where we would parse argc/argv
+    CATCH_REQUIRE(argc == 1);
+    CATCH_REQUIRE(strcmp(argv[0], "/usr/sbin/daemon") == 0);
+    CATCH_REQUIRE(argv[1] == nullptr);
+}
+
+} // namespace optional_namespace
 
 
 
@@ -748,15 +760,16 @@ CATCH_TEST_CASE("plugin_collection", "[plugins] [collection]")
 {
     CATCH_START_SECTION("load the plugin")
     {
+        char const * argv[] = { "/usr/sbin/daemon", nullptr };
+        optional_namespace::daemon::pointer_t d(std::make_shared<optional_namespace::daemon>(1, const_cast<char **>(argv)));
+
         cppthread::plugin_paths p;
         p.add(CMAKE_BINARY_DIR "/tests:/usr/local/lib/snaplogger/plugins:/usr/lib/snaplogger/plugins");
         cppthread::plugin_names n(p);
         n.find_plugins();
         cppthread::plugin_collection c(n);
-        optional_namespace::data_t d;
-        d.f_value = 0xA987;
-        c.set_data(&d);
-        CATCH_REQUIRE(c.load_plugins());
+        bool const loaded(c.load_plugins(d));
+        CATCH_REQUIRE(loaded);
         optional_namespace::testme::pointer_t r(c.get_plugin_by_name<optional_namespace::testme>("testme"));
         CATCH_REQUIRE(r != nullptr);
 

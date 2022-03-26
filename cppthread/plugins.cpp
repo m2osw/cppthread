@@ -52,6 +52,43 @@ namespace detail
 {
 
 
+
+
+
+
+
+::cppthread::plugin_definition const g_plugin_server_definition = ::cppthread::define_plugin(
+      ::cppthread::plugin_version(::cppthread::version_t(1, 0, 0))
+    , ::cppthread::plugin_library_version(::cppthread::version_t(CPPTHREAD_VERSION_MAJOR, CPPTHREAD_VERSION_MINOR, CPPTHREAD_VERSION_PATCH))
+    , ::cppthread::plugin_last_modification(UTC_BUILD_TIME_STAMP)
+    , ::cppthread::plugin_name("server")
+);
+
+class plugin_server_factory
+    : public plugin_factory
+{
+public:
+    plugin_server_factory(server::pointer_t s)
+        : plugin_factory(g_plugin_server_definition, std::dynamic_pointer_cast<plugin>(s))
+    {
+        save_factory_in_plugin(s.get());
+        register_plugin("server", instance());
+    }
+
+    plugin_server_factory(plugin_server_factory const &) = delete;
+    plugin_server_factory & operator = (plugin_server_factory const &) = delete;
+};
+
+plugin_server_factory * g_plugin_server_factory;
+
+
+
+
+
+
+
+
+
 /** \brief The global Plugin Repository.
  *
  * A plugin is always considered global, as far as the dlopen() function is
@@ -122,6 +159,10 @@ plugin_repository & plugin_repository::instance()
  * second point, the linker is used lazily so in most cases you detect
  * those errors later when you call functions in your plugins.
  *
+ * \note
+ * This function, by itself, is expected to be thread safe although it is
+ * suggested that you consider loading your plugins before creating threads.
+ *
  * \param[in] filename  The name of the file that corresponds to a plugin.
  *
  * \return The pointer to the plugin.
@@ -168,7 +209,12 @@ plugin::pointer_t plugin_repository::get_plugin(plugin_names::filename_t const &
         return plugin::pointer_t();
     }
     f_register_filename.clear();
-//SNAP_LOG_ERROR("note: registering plugin: \"")(name)("\"");
+
+    log << log_level_t::debug
+        << "loaded plugin: \""
+        << filename
+        << "\""
+        << end;
 
     return f_plugins[filename];
 }
@@ -205,10 +251,23 @@ void plugin_repository::register_plugin(plugin::pointer_t p)
 
 
 
+
 } // detail namespace
 
 
 
+server::server()
+{
+}
+
+server::~server()
+{
+}
+
+server::pointer_t server::instance()
+{
+    return std::static_pointer_cast<server>(detail::g_plugin_server_factory->instance());
+}
 
 
 
@@ -330,6 +389,18 @@ void plugin_factory::register_plugin(char const * name, plugin::pointer_t p)
 }
 
 
+void plugin_factory::save_factory_in_plugin(plugin * p)
+{
+#ifdef _DEBUG
+    if(f_definition.f_name != "server")
+    {
+        throw cppthread_logic_error("the save_factory_in_plugin() function is only to be used by the server plugin--other plugins are loaded and this save happens automatically");
+    }
+#endif
+    p->f_factory = this;
+}
+
+
 
 
 
@@ -361,6 +432,17 @@ void plugin_factory::register_plugin(char const * name, plugin::pointer_t p)
 
 
 
+/** \brief Create the server plugin.
+ *
+ * This constructor is here for the server plugin. All the other plugins
+ * are expected to be created using a factory and that factory's pointer
+ * is available to create the plugin with the other constructor.
+ */
+plugin::plugin()
+{
+}
+
+
 /** \brief Initialize the plugin with its factory.
  *
  * This constructor saves the plugin factory pointer. This is used by the
@@ -369,7 +451,7 @@ void plugin_factory::register_plugin(char const * name, plugin::pointer_t p)
  * \param[in] factory  The factory that created this plugin.
  */
 plugin::plugin(plugin_factory const & factory)
-    : f_factory(factory)
+    : f_factory(&factory)
 {
 }
 
@@ -397,7 +479,7 @@ plugin::~plugin()           // LCOV_EXCL_LINE
  */
 version_t plugin::version() const
 {
-    return f_factory.definition().f_version;
+    return f_factory->definition().f_version;
 }
 
 
@@ -408,7 +490,7 @@ version_t plugin::version() const
  */
 time_t plugin::last_modification() const
 {
-    return f_factory.definition().f_last_modification;
+    return f_factory->definition().f_last_modification;
 }
 
 
@@ -425,7 +507,7 @@ time_t plugin::last_modification() const
  */
 std::string plugin::name() const
 {
-    return f_factory.definition().f_name;
+    return f_factory->definition().f_name;
 }
 
 
@@ -457,7 +539,7 @@ std::string plugin::filename() const
  */
 std::string plugin::description() const
 {
-    return f_factory.definition().f_description;
+    return f_factory->definition().f_description;
 }
 
 
@@ -470,7 +552,7 @@ std::string plugin::description() const
  */
 std::string plugin::help_uri() const
 {
-    return f_factory.definition().f_help_uri;
+    return f_factory->definition().f_help_uri;
 }
 
 
@@ -484,7 +566,7 @@ std::string plugin::help_uri() const
  */
 std::string plugin::icon() const
 {
-    return f_factory.definition().f_icon;
+    return f_factory->definition().f_icon;
 }
 
 
@@ -498,7 +580,7 @@ std::string plugin::icon() const
  */
 string_set_t plugin::categorization_tags() const
 {
-    return f_factory.definition().f_categorization_tags;
+    return f_factory->definition().f_categorization_tags;
 }
 
 
@@ -514,7 +596,7 @@ string_set_t plugin::categorization_tags() const
  */
 string_set_t plugin::dependencies() const
 {
-    return f_factory.definition().f_dependencies;
+    return f_factory->definition().f_dependencies;
 }
 
 
@@ -531,7 +613,7 @@ string_set_t plugin::dependencies() const
  */
 string_set_t plugin::conflicts() const
 {
-    return f_factory.definition().f_conflicts;
+    return f_factory->definition().f_conflicts;
 }
 
 
@@ -544,7 +626,7 @@ string_set_t plugin::conflicts() const
  */
 string_set_t plugin::suggestions() const
 {
-    return f_factory.definition().f_suggestions;
+    return f_factory->definition().f_suggestions;
 }
 
 
@@ -558,11 +640,17 @@ string_set_t plugin::suggestions() const
  */
 std::string plugin::settings_path() const
 {
-    return f_factory.definition().f_settings_path;
+    return f_factory->definition().f_settings_path;
 }
 
 
-/** \brief Give the plugin a change to properly initialize itself.
+plugin_collection * plugin::collection() const
+{
+    return f_collection;
+}
+
+
+/** \brief Give the plugin a chance to properly initialize itself.
  *
  * The order in which plugins are loaded is generally just alphabetical
  * which in most cases is not going to cut it well when initializing them.
@@ -570,18 +658,17 @@ std::string plugin::settings_path() const
  * that are depended on can be initialized first (i.e. if A depends on B,
  * then B gets initialized first).
  *
- * The bootstrap() is that function that gets called once all the plugins
- * were loaded. This gives you the ability to properly initialize your
- * plugins.
+ * The bootstrap() is the function that gets called once all the plugins
+ * of a collection were loaded. This gives you the ability to properly
+ * initialize your plugins.
  *
- * \param[in] data  The user data as defined with the
- * plugin_collection::set_data() function.
+ * The default bootstrap() function does nothing at the moment.
  *
  * \sa plugin_collection::set_data()
+ * \sa plugin_collection::get_data<T>()
  */
-void plugin::bootstrap(void * data)
+void plugin::bootstrap()
 {
-    snapdev::NOT_USED(data);
 }
 
 
@@ -1487,6 +1574,24 @@ void plugin_names::find_plugins(name_t const & prefix, name_t const & suffix)
  * collection of plugins.
  *
  * \code
+ *     // first make sure your main daemon object derives from
+ *     // cppthread::server; this way you can add it as the "server"
+ *     // plugin and then the  other plugins depend on it
+ *     //
+ *     class daemon
+ *         : public cppthread::server
+ *     {
+ *     public:
+ *         ...
+ *     };
+ *
+ *     // create your daemon (in most cases we do that in our main()
+ *     // function, notice, though that we want a shared pointer
+ *     //
+ *     daemon::pointer_t d(std::make_shared<daemon>());
+ *
+ *     ...
+ *
  *     plugin_paths p;
  *     p.add("/usr/local/lib/snaplogger/plugins:/usr/lib/snaplogger/plugins");
  *
@@ -1496,8 +1601,13 @@ void plugin_names::find_plugins(name_t const & prefix, name_t const & suffix)
  *
  *     plugin_collection c(n);
  *     c.set_data(&my_app);
- *     c.load_plugins();
+ *     c.load_plugins(d);   // your daemon is passed down to all plugins now
  * \endcode
+ *
+ * The set_data() is still available, but the data is not passed
+ * down through plugin::bootstrap(). Instead, you use the plugin::collection()
+ * function and the get_data<T>() template. In most cases, you may be able to
+ * use the get_server() instead.
  *
  * The plugin_names makes a deep copy of the plugin_paths.
  *
@@ -1580,14 +1690,32 @@ void plugin_collection::set_data(void * data)
  * the state, you can have a second message A:S2 sent afterward, and
  * B:S2 can be ignored).
  *
+ * \param[in] s  The server, the "plugin" considered the root plugin.
+ *
  * \return true if the loading worked on all the plugins, false otherwise.
  */
-bool plugin_collection::load_plugins()
+bool plugin_collection::load_plugins(server::pointer_t s)
 {
     guard lock(f_mutex);
 
-    // TODO/TBD? add a "server" plugin which represents the main process
-    //f_plugins.insert("server", server.get());
+    // this is a bit ugly but it allows use to define a root like plugin
+    // which is the main process code; we call it a server because in
+    // most cases it will be a server/daemon type of process which makes
+    // use of plugins (at least in our environment)
+    //
+    // so in the following we (1) create a server factory manually
+    // and (2) register the server as f_server and f_plugins_by_name["server"]
+    //
+    f_server = s;
+    detail::g_plugin_server_factory = new detail::plugin_server_factory(s);
+    f_plugins_by_name["server"] = s;
+
+#ifdef _DEBUG
+    if(s->name() != "server")
+    {
+        throw cppthread_logic_error("the name in the plugin_server_factory definition must be \"server\".");
+    }
+#endif
 
     detail::plugin_repository & repository(detail::plugin_repository::instance());
     bool changed(true);
@@ -1629,6 +1757,14 @@ bool plugin_collection::load_plugins()
                 good = false;
                 continue;
             }
+
+            // give plugin access back to the collection and thus:
+            //
+            //  * the server
+            //  * the user data
+            //  * other plugins (useful to know whether a plugin exists)
+            //
+            p->f_collection = this;
 
             string_set_t const conflicts1(p->conflicts());
             for(auto & op : f_plugins_by_name)
@@ -1695,13 +1831,15 @@ bool plugin_collection::load_plugins()
     }
 
     // bootstrap() functions have to be called in order to get all the
-    // signals registered in order! (YES!!! This one for() loop makes
-    // all the signals work as expected by making sure they are in a
-    // very specific order)
+    // signals registered in order!
+    //
+    // This one for() loop makes all the signals work as expected by
+    // making sure they are in a very specific order as defined by
+    // your dependency list.
     //
     for(auto const & p : f_ordered_plugins)
     {
-        p->bootstrap(f_data);
+        p->bootstrap();
     }
 
     return good;

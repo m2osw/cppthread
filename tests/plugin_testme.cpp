@@ -46,28 +46,32 @@ CPPTHREAD_PLUGIN_START(testme, 5, 3)
     , ::cppthread::plugin_categorization_tag("test")
     , ::cppthread::plugin_categorization_tag("powerful")
     , ::cppthread::plugin_categorization_tag("software")
-    , ::cppthread::plugin_conflicts("other_test")
-    , ::cppthread::plugin_conflicts("power_test")
-    , ::cppthread::plugin_conflicts("unknown")
-    , ::cppthread::plugin_suggestions("beautiful")
+    , ::cppthread::plugin_conflict("other_test")
+    , ::cppthread::plugin_conflict("power_test")
+    , ::cppthread::plugin_conflict("unknown")
+    , ::cppthread::plugin_suggestion("beautiful")
 CPPTHREAD_PLUGIN_END(testme)
 
 
-void testme::bootstrap(void * data)
+void testme::bootstrap()
 {
-    data_t * d(reinterpret_cast<data_t *>(data));
+    //data_t * d(reinterpret_cast<data_t *>(data));
+    optional_namespace::daemon::pointer_t d(collection()->get_server<optional_namespace::daemon>());
 
     // somehow, the test environment thinks we're not inside the
     // CATCH_TEST_CASE() when any functions here gets called
     //
     //CATCH_CHECK(d->f_value == 0xA987);
 
+    if(d == nullptr)
+    {
+        throw std::runtime_error("testme: plugin could not find the daemon pointer");
+    }
+
     if(d->f_value != 0xA987)
     {
         throw std::runtime_error("testme: plugin called with an unexpected data pointer.");
     }
-
-    plugin::bootstrap(data);
 }
 
 

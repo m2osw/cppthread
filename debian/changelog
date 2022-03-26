@@ -12,6 +12,12 @@ cppthread (1.1.12.0~bionic) bionic; urgency=high
     that's not useful since it is considered _detached_).
   * Various clean ups (docs, function order).
   * Added a plugin::do_update() function to better support snapwebsites.
+  * Force you to have a "server" plugin in your main application to load
+    other plugins. This way you gain access to that server automatically.
+  * Instead of a data pointer, we give the plugin access to the collection
+    and thus the server and other plugins.
+  * The collection() still has a data pointer, see `get_data<T>()`.
+  * Added our old boost::signal2 macros to use such in our plugins.
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Mar 2022 11:48:57 -0800
 

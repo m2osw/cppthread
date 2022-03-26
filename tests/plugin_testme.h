@@ -28,11 +28,25 @@ namespace optional_namespace
 {
 
 
-struct data_t
+// TODO: This is generally in a separate header file, not along the
+//       plugin(s); for the test at this point it's the same file;
+//       look at create a new daemon.h file instead
+//
+class daemon
+    : public cppthread::server
 {
-    int     f_value = 0;
-};
+public:
+    // in most cases our daemons are given the argc/argv parameters from
+    // main() and the daemon parses those with advgetopt
+    //
+    daemon(int argc, char * argv[]);
 
+    // we already have the plugin defaults in the cppthread::server
+    //CPPTHREAD_PLUGIN_DEFAULTS(daemon);
+    typedef std::shared_ptr<daemon>     pointer_t;
+
+    int f_value = 0xA987;
+};
 
 
 /** \brief A test plugin class.
@@ -44,9 +58,9 @@ class testme
     : public cppthread::plugin
 {
 public:
-    CPPTHREAD_PLUGIN_DEFAULTS(testme)
+    CPPTHREAD_PLUGIN_DEFAULTS(testme);
 
-    virtual void        bootstrap(void * data);
+    virtual void        bootstrap();
     virtual std::string it_worked();
 
 private:
