@@ -18,6 +18,7 @@ cppthread (1.1.12.0~bionic) bionic; urgency=high
   * The collection() still has a data pointer, see `get_data<T>()`.
   * Added our old boost::signal2 macros to use such in our plugins.
   * Broken up the plugins library in separate files.
+  * Moved the plugins library to its own project (it's actually really big).
   * Various clean ups (docs, function order).
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Mar 2022 11:48:57 -0800

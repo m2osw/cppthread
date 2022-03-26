@@ -31,10 +31,7 @@ if(SnapCatch2_FOUND)
 
         catch_example.cpp
         catch_fifo.cpp
-        catch_plugins.cpp
         catch_version.cpp
-
-        plugin_daemon.cpp
     )
 
     target_include_directories(${PROJECT_NAME}
@@ -52,29 +49,6 @@ if(SnapCatch2_FOUND)
     )
 
     add_test(unittests ${PROJECT_NAME})
-
-    ##
-    ## Add a test plugin to verify the loading of it
-    ##
-    project(testme)
-
-    add_library(${PROJECT_NAME} SHARED
-        plugin_testme.cpp
-    )
-
-    target_include_directories(${PROJECT_NAME}
-        PUBLIC
-            ${CMAKE_BINARY_DIR}
-            ${PROJECT_SOURCE_DIR}
-            ${SNAPCATCH2_INCLUDE_DIRS}
-            ${LIBEXCEPT_INCLUDE_DIRS}
-            ${SNAPDEV_INCLUDE_DIRS}
-    )
-
-    target_link_libraries(${PROJECT_NAME}
-        cppthread
-        ${SNAPCATCH2_LIBRARIES}
-    )
 
 else(SnapCatch2_FOUND)
 
