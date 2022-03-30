@@ -60,6 +60,7 @@ public:
     typedef std::vector<pointer_t>      vector_t;
 
                                 thread(std::string const & name, runner * runner);
+                                thread(std::string const & name, std::shared_ptr<runner> runner);
                                 thread(thread const & rhs) = delete;
                                 ~thread();
 
@@ -79,6 +80,8 @@ public:
     std::exception_ptr          get_exception() const;
 
 private:
+    void                        init();
+
     // internal function to start the runner
     friend void *               func_internal_start(void * system_thread);
     void                        internal_thread();

@@ -90,13 +90,44 @@ thread::thread(std::string const & name, runner * runner)
     : f_name(name)
     , f_runner(runner)
 {
+    init();
+}
+
+
+/** \brief Initialize the thread with a shared pointer to the runner.
+ *
+ * At times you have a shared pointer to the runner, in which case you
+ * can directly use that pointer. This function otherwise works exactly
+ * like the other accepting a bare pointer.
+ *
+ * \param[in] name  The name of the process.
+ * \param[in] runner  The runner (the actual thread) to handle.
+ */
+thread::thread(std::string const & name, std::shared_ptr<runner> runner)
+    : f_name(name)
+    , f_runner(runner.get())
+{
+    init();
+}
+
+
+/** \brief This private function initializes the thread.
+ *
+ * We can create the thread with a bare pointer or a shared pointer.
+ * This function does the remaining of the initialization.
+ */
+void thread::init()
+{
     if(f_runner == nullptr)
     {
         throw cppthread_invalid_error("runner missing in thread() constructor");
     }
     if(f_runner->f_thread != nullptr)
     {
-        throw cppthread_in_use_error("this runner (" + name + ") is already in use");
+        throw cppthread_in_use_error(
+                      "this runner ("
+                    + f_name
+                    + ") is already in use");
     }
 
     int err(pthread_attr_init(&f_thread_attr));
