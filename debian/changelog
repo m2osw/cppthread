@@ -1,5 +1,6 @@
 cppthread (1.1.12.0~bionic) bionic; urgency=high
 
+  * Added a thread constructor to allow passing a runner shared pointer.
   * Made the testme plugin test work.
   * Removed the CATCH_CHECK() from the plugin. Version 3.x complains about it.
   * Enhanced the plugin test by calling the it_worked() function (made virtual).
@@ -18,7 +19,9 @@ cppthread (1.1.12.0~bionic) bionic; urgency=high
   * The collection() still has a data pointer, see `get_data<T>()`.
   * Added our old boost::signal2 macros to use such in our plugins.
   * Broken up the plugins library in separate files.
+  * Made note about using '-' in a plugin name (which is not allowed).
   * Moved the plugins library to its own project (it's actually really big).
+  * Cleaned up the cmake file.
   * Various clean ups (docs, function order).
 
  -- Alexis Wilke <alexis@m2osw.com>  Mon, 07 Mar 2022 11:48:57 -0800
