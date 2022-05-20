@@ -1,3 +1,9 @@
+cppthread (1.1.12.1~bionic) bionic; urgency=high
+
+  * Updated the compat version to v10.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Thu, 19 May 2022 20:27:51 -0700
+
 cppthread (1.1.12.0~bionic) bionic; urgency=high
 
   * Added a thread constructor to allow passing a runner shared pointer.
