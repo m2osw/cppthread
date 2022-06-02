@@ -19,7 +19,7 @@
 
 // cppthread lib
 //
-#include    "cppthread/thread.h"
+#include    <cppthread/thread.h>
 
 
 // C++ lib
