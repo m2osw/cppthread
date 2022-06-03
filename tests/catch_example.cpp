@@ -17,11 +17,6 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-// self
-//
-#include    "catch_main.h"
-
-
 // cppthread lib
 //
 #include    <cppthread/exception.h>
@@ -33,6 +28,11 @@
 #include    <cppthread/runner.h>
 #include    <cppthread/thread.h>
 #include    <cppthread/worker.h>
+
+
+// self
+//
+#include    "catch_main.h"
 
 
 // snapdev lib

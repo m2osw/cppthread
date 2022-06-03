@@ -17,14 +17,19 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+// cppthread
+//
+#include    <cppthread/version.h>
+
+
 // self
 //
 #include    "catch_main.h"
 
 
-// cppthread lib
+// last include
 //
-#include    <cppthread/version.h>
+#include    <snapdev/poison.h>
 
 
 

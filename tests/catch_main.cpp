@@ -20,26 +20,29 @@
 // Tell catch we want it to add the runner code in this file.
 #define CATCH_CONFIG_RUNNER
 
+// cppthread
+//
+#include    <cppthread/version.h>
+
+
 // self
 //
 #include    "catch_main.h"
 
 
-// cppthread lib
+// libexcept
 //
-#include    "cppthread/version.h"
+#include    <libexcept/exception.h>
 
 
-// libexcept lib
-//
-#include    "libexcept/exception.h"
-
-
-// C++ lib
+// C++
 //
 #include    <sstream>
 
 
+// snapdev
+//
+#include    <snapdev/poison.h>
 
 
 
