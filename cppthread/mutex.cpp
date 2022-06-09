@@ -33,12 +33,12 @@
 #include    "cppthread/log.h"
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/timespec_operations.h>
 
 
-// C lib
+// C
 //
 #include    <string.h>
 #include    <sys/time.h>

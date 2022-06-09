@@ -34,17 +34,17 @@
 #include    "cppthread/runner.h"
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/glob_to_list.h>
 
 
-// C++ lib
+// C++
 //
 #include    <fstream>
 
 
-// C lib
+// C
 //
 #include    <signal.h>
 #include    <sys/auxv.h>

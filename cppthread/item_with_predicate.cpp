@@ -44,7 +44,7 @@
 #include    "cppthread/guard.h"
 
 
-// C++ lib
+// C++
 //
 #include    <iostream>
 

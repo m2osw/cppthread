@@ -17,17 +17,22 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-// cppthread lib
+// cppthread
 //
 #include    <cppthread/thread.h>
 
 
-// C++ lib
+// libexcept
+//
+#include    <libexcept/file_inheritance.h>
+
+
+// C++
 //
 #include    <iostream>
 
 
-// C lib
+// C
 //
 #include    <string.h>
 
@@ -40,6 +45,8 @@
 
 int main(int argc, char * argv[])
 {
+    libexcept::verify_inherited_files();
+
     for(int i(1); i < argc; ++i)
     {
         if(strcmp(argv[i], "--help") == 0

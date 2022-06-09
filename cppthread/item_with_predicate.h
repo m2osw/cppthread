@@ -31,10 +31,10 @@
 
 // self
 //
-#include    "cppthread/mutex.h"
+#include    <cppthread/mutex.h>
 
 
-// C++ lib
+// C++
 //
 #include    <deque>
 

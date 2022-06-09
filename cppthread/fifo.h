@@ -31,16 +31,16 @@
 
 // self
 //
-#include    "cppthread/guard.h"
-#include    "cppthread/mutex.h"
+#include    <cppthread/guard.h>
+#include    <cppthread/mutex.h>
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/not_used.h>
 
 
-// C++ lib
+// C++
 //
 #include    <numeric>
 #include    <deque>

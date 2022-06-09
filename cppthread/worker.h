@@ -26,8 +26,8 @@
 
 // self
 //
-#include    "cppthread/fifo.h"
-#include    "cppthread/runner.h"
+#include    <cppthread/fifo.h>
+#include    <cppthread/runner.h>
 
 
 

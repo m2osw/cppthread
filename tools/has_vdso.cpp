@@ -42,17 +42,22 @@
  * \sa https://man7.org/linux/man-pages/man7/vdso.7.html
  */
 
-// cppthread lib
+// cppthread
 //
 #include    <cppthread/thread.h>
 
 
-// C++ include
+// libexcept
+//
+#include    <libexcept/file_inheritance.h>
+
+
+// C++
 //
 #include    <iostream>
 
 
-// C include
+// C
 //
 #include    <string.h>
 
@@ -74,6 +79,8 @@ void usage(char * progname)
 
 int main(int argc, char * argv[])
 {
+    libexcept::verify_inherited_files();
+
     bool verbose(false);
     bool quiet(false);
     for(int i(1); i < argc; ++i)

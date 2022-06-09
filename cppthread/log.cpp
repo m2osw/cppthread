@@ -46,7 +46,7 @@
 #include    "cppthread/exception.h"
 
 
-// C++ lib
+// C++
 //
 #include    <cstring>
 #include    <iostream>

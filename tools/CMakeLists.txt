@@ -27,8 +27,15 @@ add_executable(${PROJECT_NAME}
     show_threads.cpp
 )
 
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${LIBEXCEPT_INCLUDE_DIRS}
+        ${SNAPDEV_INCLUDE_DIRS}
+)
+
 target_link_libraries(${PROJECT_NAME}
     cppthread
+    ${LIBEXCEPT_LIBRARIES}
 )
 
 install(
@@ -52,12 +59,15 @@ add_executable(${PROJECT_NAME}
     process_is_running.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}
-    cppthread
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${LIBEXCEPT_INCLUDE_DIRS}
+        ${SNAPDEV_INCLUDE_DIRS}
 )
 
-include_directories(
-    ${SNAPDEV_INCLUDE_DIRS}
+target_link_libraries(${PROJECT_NAME}
+    cppthread
+    ${LIBEXCEPT_LIBRARIES}
 )
 
 install(
@@ -81,8 +91,15 @@ add_executable(${PROJECT_NAME}
     boot_id.cpp
 )
 
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${LIBEXCEPT_INCLUDE_DIRS}
+        ${SNAPDEV_INCLUDE_DIRS}
+)
+
 target_link_libraries(${PROJECT_NAME}
     cppthread
+    ${LIBEXCEPT_LIBRARIES}
 )
 
 install(
@@ -106,8 +123,15 @@ add_executable(${PROJECT_NAME}
     has_vdso.cpp
 )
 
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${LIBEXCEPT_INCLUDE_DIRS}
+        ${SNAPDEV_INCLUDE_DIRS}
+)
+
 target_link_libraries(${PROJECT_NAME}
     cppthread
+    ${LIBEXCEPT_LIBRARIES}
 )
 
 install(

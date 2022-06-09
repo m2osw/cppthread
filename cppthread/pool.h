@@ -32,9 +32,9 @@
 
 // self
 //
-#include    "cppthread/exception.h"
-#include    "cppthread/fifo.h"
-#include    "cppthread/thread.h"
+#include    <cppthread/exception.h>
+#include    <cppthread/fifo.h>
+#include    <cppthread/thread.h>
 
 
 

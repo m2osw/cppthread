@@ -22,12 +22,17 @@
 #include    <cppthread/thread.h>
 
 
-// C++ lib
+// libexcept
+//
+#include    <libexcept/file_inheritance.h>
+
+
+// C++
 //
 #include    <iostream>
 
 
-// C lib
+// C
 //
 #include    <string.h>
 
@@ -40,6 +45,8 @@
 
 int main(int argc, char * argv[])
 {
+    libexcept::verify_inherited_files();
+
     bool quiet(false);
     bool all(true);
     bool found(false);

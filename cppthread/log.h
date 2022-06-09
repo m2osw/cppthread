@@ -25,7 +25,7 @@
  * errors and various output (i.e. --help).
  */
 
-// C++ lib
+// C++
 //
 #include    <iostream>
 #include    <sstream>
