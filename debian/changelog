@@ -1,3 +1,9 @@
+cppthread (1.1.13.0~bionic) bionic; urgency=high
+
+  * Various clean ups of #include, documentation.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Mon, 11 Jul 2022 06:42:17 -0700
+
 cppthread (1.1.12.1~bionic) bionic; urgency=high
 
   * Updated the compat version to v10.
