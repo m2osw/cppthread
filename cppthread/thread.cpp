@@ -587,8 +587,12 @@ bool thread::start()
  * run() function. This happens after the thread has completed. The exception
  * is then removed from the thread (i.e. it won't re-throw a second time
  * and a call to get_exception() returns a null pointer).
+ *
+ * \param[in] callback  A function to call after the thread is marked as
+ * stopping but before calling join. Useful to send a signal to the child
+ * if you could not have done so earlier.
  */
-void thread::stop()
+void thread::stop(std::function<void(thread *)> callback)
 {
     {
         guard lock(f_mutex);
@@ -605,6 +609,11 @@ void thread::stop()
         // request the child to stop
         //
         f_stopping = true;
+    }
+
+    if(callback != nullptr)
+    {
+        callback(this);
     }
 
     // wait for the child to be stopped

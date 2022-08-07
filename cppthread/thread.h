@@ -36,6 +36,7 @@
 
 // C++
 //
+#include    <functional>
 #include    <string>
 #include    <vector>
 
@@ -71,7 +72,7 @@ public:
     bool                        is_running() const;
     bool                        is_stopping() const;
     bool                        start();
-    void                        stop();
+    void                        stop(std::function<void(thread *)> callback = nullptr);
     bool                        kill(int sig);
     pid_t                       get_thread_tid() const;
     mutex &                     get_thread_mutex() const;
