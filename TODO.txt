@@ -2,4 +2,11 @@
 
 * Implement many more tests to get to full coverage.
 
+* Have a scheme where a job for a worker thread is given a date when to be
+  run. This allows us to pace some jobs with a single thread. When a job is
+  performed and we are ready for the paced next step, read the packet with
+  a NOW + N seconds as the new job's date (i.e. instead of just a plain
+  wait() we use a timed_wait() which allows us to wake up and take care of
+  a lingering packet).
+
 
