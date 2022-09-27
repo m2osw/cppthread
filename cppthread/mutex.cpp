@@ -114,13 +114,48 @@ public:
  * one thread is about to be accessed. In most cases it is used with the
  * guard class so it is safe even in the event an exception is raised.
  *
+ * \code
+ *     {
+ *         cppthread::guard lock(f_mutex);
+ *
+ *         ...
+ *     } // <-- auto-unlock here
+ * \endcode
+ *
  * The mutex also includes a condition variable which can be signaled
  * using the signal() function. This wakes threads that are currently
  * waiting on the condition with one of the wait() functions.
  *
+ * \code
+ *     {
+ *         cppthread::guard lock(f_mutex);
+ *
+ *         if(<some condition>)
+ *         {
+ *             // this unlocks, waits, and relocks your mutex
+ *             f_mutex.wait();
+ *         }
+ *
+ *         ...
+ *
+ *         f_mutex.signal();      // signal one other thread
+ *            // or
+ *         f_mutex.broadcast();   // signal all the other threads
+ *     } // <-- auto-unlock here
+ * \endcode
+ *
  * \note
  * We use a recursive mutex so you may lock the mutex any number of times.
- * It has to be unlocked that many times, of course.
+ * It has to be unlocked that many times. If you use the guard class, then
+ * the lock and unlock are fully automated and you won't run in any issues
+ * other than potential dead-locks.
+ *
+ * \note
+ * The mutex copy and assignment operators are deleted. We do not allow you
+ * to copy a mutex because that is not a good idea. You probably have an
+ * issue in your code if you think you need to make a copy of a mutex.
+ * (although that our implementation, because of the `f_impl`, would allow for
+ * copies, it's still not a good idea.)
  */
 
 

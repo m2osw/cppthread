@@ -59,7 +59,10 @@ public:
     typedef std::vector<mutex>         direct_vector_t;
 
                         mutex();
+                        mutex(mutex const & rhs) = delete;
                         ~mutex();
+
+    mutex &             operator = (mutex const & rhs) = delete;
 
     void                lock();
     bool                try_lock();
