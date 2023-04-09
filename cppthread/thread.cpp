@@ -98,7 +98,9 @@ thread::thread(std::string const & name, runner * runner)
  *
  * At times you have a shared pointer to the runner, in which case you
  * can directly use that pointer. This function otherwise works exactly
- * like the other accepting a bare pointer.
+ * like the other accepting a bare pointer. In other words, the thread
+ * does not keep a shared pointer of your runner. It is expected that
+ * you do not delete your runner before the thread is done with it.
  *
  * \param[in] name  The name of the process.
  * \param[in] runner  The runner (the actual thread) to handle.
@@ -313,6 +315,30 @@ void thread::internal_thread()
             f_tid = gettid();
             f_started = true;
             f_mutex.signal();
+        }
+
+        std::string name(f_runner->get_name());
+        if(!name.empty())
+        {
+            // make sure to limit the name to 15 characters
+            //
+            if(name.length() > 15)
+            {
+                name.resize(15);
+            }
+
+            // the pthread_setname_np() allows for the name to be retrieved
+            // with its counter part:
+            //
+            //   pthread_getname_np()
+            //
+            pthread_setname_np(pthread_self(), name.c_str());
+
+            // but to really change the name in the comm file (and therefore
+            // htop, ps, etc.) we further call the set_current_thread_name()
+            // function which directly writes to that file
+            //
+            set_current_thread_name(name);
         }
 
         // if the enter failed, do not continue

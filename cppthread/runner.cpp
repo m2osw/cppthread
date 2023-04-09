@@ -66,26 +66,6 @@ runner::runner(std::string const & name)
     : f_name(name)
 {
     // TBD: should we forbid starting a runner without a name?
-    //
-    if(!name.empty())
-    {
-        // make sure to limit the name to 15 characters
-        //
-        std::string const name15(f_name.substr(0, 15));
-
-        // the pthread_setname_np() allows for the name to be retrieved
-        // with its counter part:
-        //
-        //   pthread_getname_np()
-        //
-        pthread_setname_np(pthread_self(), name15.c_str());
-
-        // but to really change the name in the comm file (and therefore
-        // htop, ps, etc.) we further call the set_current_thread_name()
-        // function
-        //
-        set_current_thread_name(name15);
-    }
 }
 
 
