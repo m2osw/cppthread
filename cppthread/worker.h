@@ -43,7 +43,8 @@ class worker
 public:
     typedef T       work_load_type;
 
-    worker<T>(std::string const & name
+    worker(
+              std::string const & name
             , std::size_t position
             , typename fifo<T>::pointer_t in
             , typename fifo<T>::pointer_t out)
@@ -58,7 +59,7 @@ public:
         }
     }
 
-    worker<T>(worker const & rhs) = delete;
+    worker(worker const & rhs) = delete;
     worker<T> & operator = (worker<T> const & rhs) = delete;
 
     std::size_t position() const

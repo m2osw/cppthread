@@ -90,11 +90,12 @@ private:
 
 
 public:
-    pool<W, A...>(std::string const & name
-                         , std::size_t pool_size
-                         , typename worker_fifo_t::pointer_t in
-                         , typename worker_fifo_t::pointer_t out
-                         , A... args)
+    pool(
+              std::string const & name
+            , std::size_t pool_size
+            , typename worker_fifo_t::pointer_t in
+            , typename worker_fifo_t::pointer_t out
+            , A... args)
         : f_name(name)
         , f_in(in)
         , f_out(out)
@@ -119,7 +120,7 @@ public:
         }
     }
 
-    ~pool<W, A...>()
+    ~pool()
     {
         stop(false);
         wait();
