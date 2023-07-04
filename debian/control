@@ -1,11 +1,10 @@
 Source: cppthread
 Priority: extra
-Maintainer: R. Douglas Barbieri <doug@dooglio.net>
+Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
     debhelper,
     doxygen,
     graphviz,
-    libboost-dev,
     libexcept-dev (>= 1.1.4.0~bionic),
     snapcatch2 (>= 2.9.1.0~bionic),
     snapcmakemodules (>= 1.0.49.0~bionic),
