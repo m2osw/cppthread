@@ -1,3 +1,13 @@
+cppthread (1.1.15.0~jammy) jammy; urgency=high
+
+  * Actually install our tools.
+  * Updated debian/compat to latest available.
+  * Removed "boost-dev" as a build dependency.
+  * Cleaned up constructors/destructors (no need for template parameters).
+  * Save the thread name in the right place (i.e. while running thread).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 03 Nov 2023 16:18:48 -0700
+
 cppthread (1.1.14.0~jammy) jammy; urgency=high
 
   * Made mutex non-copyable.
