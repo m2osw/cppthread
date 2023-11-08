@@ -1,3 +1,9 @@
+cppthread (1.1.15.1~bionic) bionic; urgency=high
+
+  * Bumped build version to rebuild on Launchpad.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Tue, 07 Nov 2023 20:35:17 -0800
+
 cppthread (1.1.15.0~jammy) jammy; urgency=high
 
   * Actually install our tools.
