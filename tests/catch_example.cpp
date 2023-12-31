@@ -17,7 +17,7 @@
 // with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-// cppthread lib
+// cppthread
 //
 #include    <cppthread/exception.h>
 #include    <cppthread/fifo.h>
@@ -35,12 +35,12 @@
 #include    "catch_main.h"
 
 
-// snapdev lib
+// snapdev
 //
 #include    <snapdev/not_reached.h>
 
 
-// C lib
+// C
 //
 #include    <unistd.h>
 
@@ -51,6 +51,7 @@ CATCH_TEST_CASE("example", "[example]")
     CATCH_START_SECTION("Simple threading")
     {
         // TODO...
+        CATCH_REQUIRE(true);
     }
     CATCH_END_SECTION()
 }
