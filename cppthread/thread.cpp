@@ -397,7 +397,7 @@ void thread::internal_thread()
     }
 
     // marked we are done (outside of the try/catch because if this one
-    // fails, we have a big problem... (i.e. invalid mutex or more unlock
+    // fails, we have a big problem... (i.e. invalid mutex or more unlocks
     // than locks)
     {
         guard lock(f_mutex);
