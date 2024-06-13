@@ -550,6 +550,12 @@ void thread::internal_leave(leave_status_t status)
  * is indeed started. The function will not return until the thread
  * is started or something failed.
  *
+ * Note that by default all signals are blocked for all our threads.
+ * This is much safer because otherwise the default signal handler
+ * kicks in and is likely to terminate the whole process. If you want
+ * a thread to have some signals unblocked, call the unmask_signals()
+ * function as required.
+ *
  * \return true if the thread successfully started, false otherwise.
  */
 bool thread::start()
@@ -576,6 +582,18 @@ bool thread::start()
     f_started = false;
     f_stopping = false; // make sure it is reset
     f_exception = std::exception_ptr();
+
+    // by default, block all signals in threads
+    //
+    // Note: we check whether the gettid() is equal to the getpid() which
+    //       means only the main thread tweaks the signals; this is
+    //       important otherwise we could mess up the mask
+    //
+    libexcept::scoped_signal_mask::pointer_t block_all_signals;
+    if(gettid() == getpid())
+    {
+        block_all_signals = std::make_shared<libexcept::scoped_signal_mask>();
+    }
 
     int const err(pthread_create(&f_thread_id, &f_thread_attr, &func_internal_start, this));
     if(err != 0)
@@ -802,7 +820,7 @@ std::exception_ptr thread::get_exception() const
 
 /** \brief Send a signal to this thread.
  *
- * This function sends a signal to a specific thread.
+ * This function sends a signal to this specific thread.
  *
  * You have to be particularly careful with Unix signal and threads as they
  * do not always work as expected. This is yet particularly useful if you
@@ -831,6 +849,88 @@ bool thread::kill(int sig)
     }
 
     return false;
+}
+
+
+/** \brief Masks signals from this thread.
+ *
+ * The thread has a signal mask that can be used to prevent delivery of
+ * signals to that thread. In our event dispatcher environment, all
+ * threads should have their signals masked because in most cases
+ * the threads will just die on a signal. This is because the
+ * event dispatcher system uses the fdsignal() and thus does not make
+ * use of handler. The default handler for most signal will terminate
+ * the whole process.
+ *
+ * \param[in] list  The list of signals to block.
+ *
+ * \sa mask_all_signals()
+ * \sa unmask_signals()
+ */
+void thread::mask_signals(libexcept::sig_list_t list)
+{
+    sigset_t set;
+    sigemptyset(&set);
+    for(auto const & s : list)
+    {
+        sigaddset(&set, s);
+    }
+    pthread_sigmask(SIG_BLOCK, &set, nullptr);
+}
+
+
+/** \brief Block all signals for this thread.
+ *
+ * After this call, all Unix signals will be masked (except for the few that
+ * can never be masked such as SIGKILL).
+ *
+ * Note that by default a thread always starts with all its signals
+ * blocked. In most cases, you want to leave them that way. This function
+ * is useful only if you call the unmask_signals() to unblock some signals
+ * for some time.
+ *
+ * \note
+ * The start() function currently masks all the signals before starting
+ * the thread.
+ *
+ * \todo
+ * This won't work well in our test environment. This is due to the fact
+ * that there are a few signals that are used by the catch2 and sanitizer
+ * tools. See the scoped_signal_mask implementation in libexcept for
+ * additional information about this.
+ *
+ * \sa mask_signals()
+ * \sa unmask_signals()
+ */
+void thread::mask_all_signals()
+{
+    sigset_t set;
+    sigfillset(&set);
+    pthread_sigmask(SIG_BLOCK, &set, nullptr);
+}
+
+
+/** \brief Unmask signals for this thread.
+ *
+ * After this call, all the signals defined in \p list will be unmasked.
+ * This means those signals may be sent to this thread instead of the
+ * main application. In most cases, unless you properly define a
+ * signal handler, the signals will terminate the whole process.
+ *
+ * \param[in] list  The list of signals to unblock.
+ *
+ * \sa mask_signals()
+ * \sa mask_all_signals()
+ */
+void thread::unmask_signals(libexcept::sig_list_t list)
+{
+    sigset_t set;
+    sigemptyset(&set);
+    for(auto const & s : list)
+    {
+        sigaddset(&set, s);
+    }
+    pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
 }
 
 
