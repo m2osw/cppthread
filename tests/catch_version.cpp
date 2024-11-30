@@ -36,7 +36,7 @@
 
 CATCH_TEST_CASE("version", "[version]")
 {
-    CATCH_START_SECTION("verify runtime vs compile time version numbers")
+    CATCH_START_SECTION("version: verify runtime vs compile time version numbers")
     {
         CATCH_CHECK(cppthread::get_major_version()   == CPPTHREAD_VERSION_MAJOR);
         CATCH_CHECK(cppthread::get_release_version() == CPPTHREAD_VERSION_MINOR);

@@ -238,7 +238,7 @@ mutex::mutex()
             << "a mutex attribute structure could not be initialized, error #"
             << err
             << end;
-        throw cppthread_invalid_error("pthread_muteattr_init() failed");
+        throw invalid_error("pthread_muteattr_init() failed");
     }
     err = pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
     if(err != 0)
@@ -248,7 +248,7 @@ mutex::mutex()
             << err
             << end;
         pthread_mutexattr_destroy(&mattr);
-        throw cppthread_invalid_error("pthread_muteattr_settype() failed");
+        throw invalid_error("pthread_muteattr_settype() failed");
     }
     err = pthread_mutex_init(&f_impl->f_mutex, &mattr);
     if(err != 0)
@@ -258,7 +258,7 @@ mutex::mutex()
             << err
             << end;
         pthread_mutexattr_destroy(&mattr);
-        throw cppthread_invalid_error("pthread_mutex_init() failed");
+        throw invalid_error("pthread_mutex_init() failed");
     }
     err = pthread_mutexattr_destroy(&mattr);
     if(err != 0)
@@ -268,7 +268,7 @@ mutex::mutex()
             << err
             << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_invalid_error("pthread_mutexattr_destroy() failed");
+        throw invalid_error("pthread_mutexattr_destroy() failed");
     }
 
     // initialize the condition
@@ -281,7 +281,7 @@ mutex::mutex()
             << err
             << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_invalid_error("pthread_condattr_init() failed");
+        throw invalid_error("pthread_condattr_init() failed");
     }
     err = pthread_cond_init(&f_impl->f_condition, &cattr);
     if(err != 0)
@@ -292,7 +292,7 @@ mutex::mutex()
             << end;
         pthread_condattr_destroy(&cattr);
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_invalid_error("pthread_cond_init() failed");
+        throw invalid_error("pthread_cond_init() failed");
     }
     err = pthread_condattr_destroy(&cattr);
     if(err != 0)
@@ -302,7 +302,7 @@ mutex::mutex()
             << err
             << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
-        throw cppthread_invalid_error("pthread_condattr_destroy() failed");
+        throw invalid_error("pthread_condattr_destroy() failed");
     }
 }
 
@@ -377,7 +377,7 @@ void mutex::lock()
             << " -- "
             << strerror(err)
             << end;
-        throw cppthread_invalid_error("pthread_mutex_lock() failed");
+        throw invalid_error("pthread_mutex_lock() failed");
     }
 
     // note: we do not need an atomic call since we
@@ -421,7 +421,7 @@ bool mutex::try_lock()
         << " -- "
         << strerror(err)
         << end;
-    throw cppthread_invalid_error("pthread_mutex_trylock() failed");
+    throw invalid_error("pthread_mutex_trylock() failed");
 }
 
 
@@ -450,7 +450,7 @@ void mutex::unlock()
             << f_reference_count
             << " times"
             << end;
-        throw cppthread_not_locked_error("unlock was called too many times");
+        throw not_locked_error("unlock was called too many times");
     }
 
     // NOTE: we do not need an atomic call since we
@@ -466,7 +466,7 @@ void mutex::unlock()
             << " -- "
             << strerror(err)
             << end;
-        throw cppthread_invalid_error("pthread_mutex_unlock() failed");
+        throw invalid_error("pthread_mutex_unlock() failed");
     }
 }
 
@@ -506,7 +506,7 @@ void mutex::wait()
     //        << "attempting to wait on a mutex when it is not locked exactly once, current count is "
     //        << f_reference_count
     //        << end;
-    //    throw cppthread_exception_not_locked_once_error();
+    //    throw exception_not_locked_once_error();
     //}
     int const err(pthread_cond_wait(&f_impl->f_condition, &f_impl->f_mutex));
     if(err != 0)
@@ -518,7 +518,7 @@ void mutex::wait()
             << " -- "
             << strerror(err)
             << end;
-        throw cppthread_mutex_failed_error("pthread_cond_wait() failed");
+        throw mutex_failed_error("pthread_cond_wait() failed");
     }
 }
 
@@ -615,7 +615,7 @@ bool mutex::timed_wait(timespec const & nsecs)
             << abstime.tv_nsec
             << ")"
             << end;
-        throw cppthread_mutex_failed_error("pthread_cond_timedwait() failed");
+        throw mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -682,7 +682,7 @@ bool mutex::dated_wait(timespec const & date)
     //        << " msec on a mutex when it is not locked exactly once, current count is "
     //        << f_reference_count
     //        << end;
-    //    throw cppthread_exception_not_locked_once_error();
+    //    throw exception_not_locked_once_error();
     //}
 
     int const err(pthread_cond_timedwait(
@@ -708,7 +708,7 @@ bool mutex::dated_wait(timespec const & date)
             << date.tv_nsec
             << ")"
             << end;
-        throw cppthread_mutex_failed_error("pthread_cond_timedwait() failed");
+        throw mutex_failed_error("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -743,7 +743,7 @@ void mutex::signal()
             << "a mutex condition signal generated error #"
             << err
             << end;
-        throw cppthread_invalid_error("pthread_cond_signal() failed");
+        throw invalid_error("pthread_cond_signal() failed");
     }
 }
 
@@ -773,7 +773,7 @@ void mutex::safe_signal()
             << "a mutex condition signal generated error #"
             << err
             << end;
-        throw cppthread_invalid_error("pthread_cond_signal() failed");
+        throw invalid_error("pthread_cond_signal() failed");
     }
 }
 
@@ -807,7 +807,7 @@ void mutex::safe_broadcast()
             << "a mutex signal broadcast generated error #"
             << err
             << end;
-        throw cppthread_invalid_error("pthread_cond_broadcast() failed");
+        throw invalid_error("pthread_cond_broadcast() failed");
     }
 }
 
@@ -846,7 +846,7 @@ void mutex::broadcast()
             << "a mutex signal broadcast generated error #"
             << err
             << end;
-        throw cppthread_invalid_error("pthread_cond_broadcast() failed");
+        throw invalid_error("pthread_cond_broadcast() failed");
     }
 }
 

@@ -160,7 +160,7 @@ void item_with_predicate::add_dependency(pointer_t item)
 
     if(f_processing)
     {
-        throw cppthread_in_use_error("workload already being processed, you can't add more dependencies to it.");
+        throw in_use_error("workload already being processed, you can't add more dependencies to it.");
     }
 
     f_dependencies.push_back(item);
@@ -186,7 +186,7 @@ void item_with_predicate::add_dependencies(dependencies_t const & dependencies)
 
     if(f_processing)
     {
-        throw cppthread_in_use_error("workload already being processed, you can't add more dependencies to it.");
+        throw in_use_error("workload already being processed, you can't add more dependencies to it.");
     }
 
     f_dependencies.insert(f_dependencies.begin(), dependencies.cbegin(), dependencies.cend());

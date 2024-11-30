@@ -111,9 +111,9 @@ std::string const & runner::get_name() const
 
 /** \brief Check whether this thread runner is ready.
  *
- * By default a thread runner is considered ready. If you reimplement this
- * function it is possible to tell the thread controller that you are not
- * ready. This means the start() function will fail and return false.
+ * By default a thread runner is considered ready. If you override this
+ * function, it is possible to tell the thread controller that you are not
+ * ready. This means the start() function fails and returns false.
  *
  * \return true by default, can return false to prevent a start() command.
  */

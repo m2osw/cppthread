@@ -1,3 +1,9 @@
+cppthread (1.1.16.0~jammy) bionic; urgency=high
+
+  * Adding actual tests of the cppthread and runner.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Fri, 29 Nov 2024 19:24:39 -0800
+
 cppthread (1.1.15.2~jammy) bionic; urgency=high
 
   * Bumped build version to rebuild on Launchpad.

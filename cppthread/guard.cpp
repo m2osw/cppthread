@@ -89,7 +89,7 @@ guard::guard(mutex & m)
     {
         // mutex is mandatory
         //
-        throw cppthread_logic_error("mutex missing in guard() constructor");
+        throw logic_error("mutex missing in guard() constructor");
     }
     f_mutex->lock();
     f_locked = true;

@@ -50,7 +50,7 @@
 
 CATCH_TEST_CASE("fifo", "[fifo]")
 {
-    CATCH_START_SECTION("FIFO with constraints (own implementation)")
+    CATCH_START_SECTION("fifo: FIFO with constraints (own implementation)")
     {
         struct item_t
         {
@@ -114,7 +114,7 @@ CATCH_TEST_CASE("fifo", "[fifo]")
     }
     CATCH_END_SECTION()
 
-    CATCH_START_SECTION("FIFO with constraints (item_with_predicate implementation)")
+    CATCH_START_SECTION("fifo: FIFO with constraints (item_with_predicate implementation)")
     {
         struct item_t
             : public cppthread::item_with_predicate
@@ -166,7 +166,7 @@ CATCH_TEST_CASE("fifo", "[fifo]")
     }
     CATCH_END_SECTION()
 
-    CATCH_START_SECTION("FIFO with constraints -- Number 2 (item_with_predicate implementation)")
+    CATCH_START_SECTION("fifo: FIFO with constraints -- Number 2 (item_with_predicate implementation)")
     {
         struct item_t
             : public cppthread::item_with_predicate

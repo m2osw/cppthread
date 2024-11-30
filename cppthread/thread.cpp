@@ -122,34 +122,40 @@ void thread::init()
 {
     if(f_runner == nullptr)
     {
-        throw cppthread_invalid_error("runner missing in thread() constructor");
+        throw invalid_error("runner missing in thread() constructor.");
     }
     if(f_runner->f_thread != nullptr)
     {
-        throw cppthread_in_use_error(
+        throw in_use_error(
                       "this runner ("
-                    + f_name
-                    + ") is already in use");
+                    + f_runner->get_name()
+                    + ") is already in use.");
     }
 
     int err(pthread_attr_init(&f_thread_attr));
     if(err != 0)
     {
+        // LCOV_EXCL_START
         log << log_level_t::fatal
             << "the thread attributes could not be initialized, error #"
             << err
+            << '.'
             << end;
-        throw cppthread_invalid_error("pthread_attr_init() failed");
+        throw invalid_error("pthread_attr_init() failed.");
+        // LCOV_EXCL_STOP
     }
     err = pthread_attr_setdetachstate(&f_thread_attr, PTHREAD_CREATE_JOINABLE);
     if(err != 0)
     {
+        // LCOV_EXCL_START
         log << log_level_t::fatal
-            << "the thread detach state could not be initialized, error #"
+            << "the thread detach state could not be initialized to joinable, error #"
             << err
+            << '.'
             << end;
         pthread_attr_destroy(&f_thread_attr);
-        throw cppthread_invalid_error("pthread_attr_setdetachstate() failed");
+        throw invalid_error("pthread_attr_setdetachstate() failed");
+        // LCOV_EXCL_STOP
     }
 
     f_runner->f_thread = this;
@@ -164,7 +170,7 @@ void thread::init()
  * Then it destroys the thread attributes and returns.
  *
  * The destructor also removes the thread from the runner so the runner
- * can create another thread controller and run again.
+ * can be assigned to another thread controller and run again.
  */
 thread::~thread()
 {
@@ -182,10 +188,13 @@ thread::~thread()
     int const err(pthread_attr_destroy(&f_thread_attr));
     if(err != 0)
     {
+        // LCOV_EXCL_START
         log << log_level_t::error
             << "the thread attributes could not be destroyed, error #"
             << err
+            << '.'
             << end;
+        // LCOV_EXCL_STOP
     }
 }
 
@@ -279,7 +288,7 @@ bool thread::is_stopping() const
  * \param[in] system_thread  The thread pointer.
  *
  * \return We return a null pointer, which we do not use because we expect
- *         uses to pass results in a different way (i.e. using the fifo).
+ *         users to pass results in a different way (i.e. using the fifo).
  */
 void * func_internal_start(void * system_thread)
 {
@@ -524,19 +533,24 @@ void thread::internal_leave(leave_status_t status)
     }
     catch(std::exception const & e)
     {
-        // keep the first exception (i.e. internal_enter() or internal_run()
+        // keep the first exception (i.e. internal_enter() and internal_run()
         // have priority on this one)
         //
+        bool force_log(true);
         if(f_exception == std::exception_ptr())
         {
             f_exception = std::current_exception();
+            force_log = false;
         }
 
-        log << log_level_t::fatal
-            << "thread internal_leave() got exception: \""
-            << e.what()
-            << "\", exiting thread now."
-            << end;
+        if(f_log_all_exceptions || force_log)
+        {
+            log << log_level_t::fatal
+                << "thread internal_leave() got exception: \""
+                << e.what()
+                << "\", exiting thread now."
+                << end;
+        }
     }
 }
 
@@ -565,7 +579,7 @@ bool thread::start()
     if(f_running || f_started)
     {
         log << log_level_t::warning
-            << "the thread is already running"
+            << "the thread is already running."
             << end;
         return false;
     }
@@ -573,7 +587,7 @@ bool thread::start()
     if(!f_runner->is_ready())
     {
         log << log_level_t::warning
-            << "the thread runner is not ready"
+            << "the thread runner is not ready."
             << end;
         return false;
     }
@@ -598,13 +612,16 @@ bool thread::start()
     int const err(pthread_create(&f_thread_id, &f_thread_attr, &func_internal_start, this));
     if(err != 0)
     {
+        // LCOV_EXCL_START
         f_running = false;
 
         log << log_level_t::error
             << "the thread could not be created, error #"
             << err
+            << '.'
             << end;
         return false;
+        // LCOV_EXCL_STOP
     }
 
     while(!f_started)
@@ -738,6 +755,11 @@ mutex & thread::get_thread_mutex() const
  * likely to expect things are happening in the thread and if not, it
  * gets stuck. At least, in this way, by default you get a message in your
  * logs.
+ *
+ * Note that in case of the leave() callback, it may also generate an
+ * exception when one of enter() or run() may already have generated
+ * an exception. In that case, the log is always generated since otherwise
+ * you would lose that information.
  *
  * \note
  * Unknown exceptions (i.e. those not derived from std::exception), are
@@ -1173,11 +1195,11 @@ int set_thread_name(pid_t tid, std::string const & name)
 {
     if(name.empty())
     {
-        throw cppthread_invalid_error("thread name cannot be empty.");
+        throw invalid_error("thread name cannot be empty.");
     }
     if(name.length() > 15)
     {
-        throw cppthread_out_of_range(
+        throw out_of_range(
               "thread name is limited to 15 characters, \""
             + name
             + "\" is too long.");

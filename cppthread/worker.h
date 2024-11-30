@@ -55,7 +55,7 @@ public:
     {
         if(f_in == nullptr)
         {
-            throw cppthread_invalid_error("a worker object must be given a valid input FIFO");
+            throw invalid_error("a worker object must be given a valid input FIFO");
         }
     }
 

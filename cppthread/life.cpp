@@ -89,14 +89,14 @@ life::life(thread * const thread)
 {
     if(f_thread == nullptr)
     {
-        throw cppthread_logic_error("life pointer is nullptr");
+        throw logic_error("life pointer is nullptr");
     }
     if(!f_thread->start())
     {
         // we cannot really just generate an error if the thread
         // does not start because we do not offer a way for the
         // user to know so we have to throw for now
-        throw cppthread_not_started("somehow the thread was not started, an error should have been logged");
+        throw not_started("somehow the thread was not started, an error should have been logged");
     }
 }
 

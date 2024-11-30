@@ -29,7 +29,7 @@ if(SnapCatch2_FOUND)
     add_executable(${PROJECT_NAME}
         catch_main.cpp
 
-        catch_example.cpp
+        catch_thread.cpp
         catch_fifo.cpp
         catch_version.cpp
     )
@@ -53,6 +53,16 @@ if(SnapCatch2_FOUND)
 else(SnapCatch2_FOUND)
 
     message("snapcatch2 not found... no test will be built.")
+
+endif(SnapCatch2_FOUND)
+
+if(SnapCatch2_FOUND)
+
+    find_package(SnapTestRunner)
+    AddUnitTestsTarget(
+        PROJECT_NAME
+            rununittests
+    )
 
 endif(SnapCatch2_FOUND)
 

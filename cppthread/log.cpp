@@ -398,7 +398,7 @@ logger & logger::operator << (log_level_t const & level)
     if(level < log_level_t::debug
     || level > log_level_t::fatal)
     {
-        throw cppthread_invalid_log_level(
+        throw invalid_log_level(
                       "unknown log level ("
                     + std::to_string(static_cast<int>(level))
                     + ").");
@@ -470,7 +470,7 @@ std::uint32_t logger::get_counter(log_level_t level) const
     if(level < log_level_t::debug
     || level > log_level_t::fatal)
     {
-        throw cppthread_invalid_log_level(
+        throw invalid_log_level(
                       "unknown log level ("
                     + std::to_string(static_cast<int>(level))
                     + ").");
@@ -605,7 +605,7 @@ std::string to_string(log_level_t level)
 
     }
 
-    throw cppthread_invalid_error("unknown log level ("
+    throw invalid_error("unknown log level ("
                                  + std::to_string(static_cast<int>(level))
                                  + ")");
 }
