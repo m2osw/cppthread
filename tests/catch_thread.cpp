@@ -102,7 +102,7 @@ struct data_t
 
     int     f_value = 0;
 
-    bool operator == (data_t const & rhs)
+    bool operator == (data_t const & rhs) const
     {
         return f_value == rhs.f_value;
     }
