@@ -1,6 +1,10 @@
 cppthread (1.1.16.0~jammy) bionic; urgency=high
 
   * Adding actual tests of the cppthread and runner.
+  * Added support to ignore all signals in threads.
+  * Applied fix & clean up the tests so we can run them again.
+  * Fixed function that returned the wrong string (thread name vs runner name).
+  * Made == operator a const as it was supposed to be.
 
  -- Alexis Wilke <alexis@m2osw.com>  Fri, 29 Nov 2024 19:24:39 -0800
 

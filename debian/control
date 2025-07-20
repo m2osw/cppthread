@@ -2,7 +2,7 @@ Source: cppthread
 Priority: extra
 Maintainer: Alexis Wilke <alexis@m2osw.com>
 Build-Depends: cmake,
-    debhelper,
+    debhelper-compat (= 13),
     doxygen,
     graphviz,
     libexcept-dev (>= 1.1.4.0~jammy),
