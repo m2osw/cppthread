@@ -1,4 +1,4 @@
-cppthread (1.1.16.0~jammy) bionic; urgency=high
+cppthread (1.1.16.0~noble) noble; urgency=high
 
   * Adding actual tests of the cppthread and runner.
   * Added support to ignore all signals in threads.
