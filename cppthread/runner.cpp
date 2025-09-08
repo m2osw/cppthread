@@ -226,7 +226,7 @@ void runner::enter()
  * The default function logs the fact that the thread is exiting. You often
  * call it at the end of your own leave() implementation.
  *
- * \param[in] status  The location from which the leave() function get called.
+ * \param[in] status  The location from which the leave() function gets called.
  */
 void runner::leave(leave_status_t status)
 {
