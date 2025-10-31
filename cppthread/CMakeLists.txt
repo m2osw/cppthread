@@ -78,8 +78,11 @@ install(
         exception.h
         fifo.h
         guard.h
+        item_with_predicate.h
+        life.h
         log.h
         mutex.h
+        pool.h
         runner.h
         thread.h
         worker.h

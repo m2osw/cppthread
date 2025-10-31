@@ -109,7 +109,7 @@ public:
             throw out_of_range("pool size too large (we accept up to 1000 at this time, which is already very very large!)");
         }
         f_workers.reserve(pool_size);
-        for(size_t i(0); i < pool_size; ++i)
+        for(std::size_t i(0); i < pool_size; ++i)
         {
             f_workers.push_back(std::make_shared<worker_thread_t>(
                           f_name
@@ -126,7 +126,7 @@ public:
         wait();
     }
 
-    size_t size() const
+    std::size_t size() const
     {
         return f_workers.size();
     }
@@ -154,7 +154,7 @@ public:
         f_in->push_back(v);
     }
 
-    bool pop_front(work_load_type & v, int64_t usecs)
+    bool pop_front(work_load_type & v, std::int64_t usecs)
     {
         if(f_in->is_done())
         {
