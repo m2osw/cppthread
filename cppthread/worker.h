@@ -26,6 +26,7 @@
 
 // self
 //
+#include    <cppthread/exception.h>
 #include    <cppthread/fifo.h>
 #include    <cppthread/runner.h>
 
