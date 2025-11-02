@@ -90,7 +90,7 @@ public:
 
         while(continue_running())
         {
-            if(f_in->pop_front(f_workload, -1))
+            if(f_in->pop_front(f_payload, -1))
             {
                 if(continue_running())
                 {
@@ -107,7 +107,7 @@ public:
                     {
                         if(f_out != nullptr)
                         {
-                            f_out->push_back(f_workload);
+                            f_out->push_back(f_payload);
                         }
                     }
 
@@ -133,7 +133,7 @@ public:
     virtual bool do_work() = 0;
 
 protected:
-    T                           f_workload = T();
+    T                           f_payload = T();
     typename fifo<T>::pointer_t f_in;
     typename fifo<T>::pointer_t f_out;
 

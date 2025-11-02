@@ -46,7 +46,7 @@ namespace cppthread
  * One pool of worker threads is expected to share one pair of fifo
  * objects. Also. the input and output fifo objects must be of the
  * same type. The output can be set to nullptr if you create all the
- * workloads ahead of time or create new items in the current threads.
+ * payloads ahead of time or create new items in the current threads.
  * Both methods will work fine.
  *
  * To use your pool of threads, all you have to do is add data to the
@@ -178,13 +178,13 @@ namespace cppthread
  * against the work load automatically retrieved in the run()
  * function.
  *
- * Your load is available in the f_workload variable member.
+ * Your load is available in the f_payload variable member.
  * You are free to modify it. The snap_worker object ignores
  * its content. It retrieved it from the input fifo (f_in)
  * and will save it in the output fifo once done (f_out).
  *
  * \return true if the work is considered successful and the
- * workload should be forwarded. On false, the workload does
+ * payload should be forwarded. On false, the payload does
  * not get forwarded to the output fifo.
  */
 
@@ -196,13 +196,13 @@ namespace cppthread
  */
 
 
-/** \var worker<T>::f_workload
- * \brief The workload this worker is processing.
+/** \var worker<T>::f_payload
+ * \brief The payload this worker is processing.
  *
- * This is the workload, an item from the input fifo, which this thread
+ * This is the payload, an item from the input fifo, which this thread
  * is expected to work on.
  *
- * Once the thread returns, that workload will be forwarded to the output
+ * Once the thread returns, that payload will be forwarded to the output
  * fifo is there is one.
  */
 
@@ -219,7 +219,7 @@ namespace cppthread
  *
  * This variable member holds the output fifo pointer.
  *
- * The pointer can be set to nullptr in which case the workload gets dropped
+ * The pointer can be set to nullptr in which case the payload gets dropped
  * at the time the thread returns from its do_work() function.
  */
 
@@ -250,7 +250,7 @@ namespace cppthread
  *
  * For statistical purposes, you can use the runs() function which
  * returns the number of time this runner was given the chance to
- * work on a workload.
+ * work on a payload.
  */
 
 
