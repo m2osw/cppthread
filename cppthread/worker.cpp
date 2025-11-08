@@ -44,15 +44,16 @@ namespace cppthread
  * break down the work by chunk.
  *
  * One pool of worker threads is expected to share one pair of fifo
- * objects. Also. the input and output fifo objects must be of the
+ * objects. Also the input and output fifo objects must be of the
  * same type. The output can be set to nullptr if you create all the
  * payloads ahead of time or create new items in the current threads.
- * Both methods will work fine.
+ * Both methods work fine.
  *
  * To use your pool of threads, all you have to do is add data to the
  * input fifo and grab results from the output fifo. Note that
  * the output fifo of one pool of threads can be the input fifo
- * of another pool of threads.
+ * of another pool of threads or even the input fifo in which case
+ * further work can be sent to the same pool of workers.
  */
 
 
@@ -85,8 +86,8 @@ namespace cppthread
 /** \fn worker::worker<T>(worker<T> const & rhs)
  * \brief Deleted copy operator.
  *
- * The copy operator is deleted to clearly prevent copying of workers.
- * Threads could not easily be duplicated, especially the PC, stack, local
+ * The copy operator is deleted to clearly prevent copying workers.
+ * Threads cannot easily be duplicated, especially the PC, stack, local
  * variables...
  *
  * \param[in] rhs  The right hand side item.
@@ -97,7 +98,7 @@ namespace cppthread
  * \brief Deleted assignment operator.
  *
  * The assignment operator is deleted to clearly prevent copying of workers.
- * Threads could not easily be duplicated, especially the PC, stack, local
+ * Threads cannot easily be duplicated, especially the PC, stack, local
  * variables...
  *
  * \param[in] rhs  The right hand side item.
@@ -121,12 +122,12 @@ namespace cppthread
  * \brief Check whether this specific worker thread is busy.
  *
  * This function let you know whether this specific worker thread
- * picked a work load and is currently processing it. The processing
+ * picked a pay load and is currently processing it. The processing
  * includes copying the data to the output FIFO. However, there is
- * a small period of time between the time another work load object
+ * a small period of time between the time another pay load object
  * is being picked up and the time it gets used that the thread is
  * not marked as working yet. So in other words, this function may
- * be lying at that point.
+ * be \em lying at that point.
  *
  * \return Whether the thread is still working.
  */
@@ -136,7 +137,7 @@ namespace cppthread
  * \brief Number of time this worker got used.
  *
  * This function returns the number of time this worker ended up
- * running against a work load.
+ * running against a pay load.
  *
  * The function may return 0 if the worker never ran. If you create
  * a large pool of threads but do not have much work, this is not
@@ -149,7 +150,7 @@ namespace cppthread
 /** \fn worker<T>::run()
  * \brief Implement the worker loop.
  *
- * This function is the overload of the snap_runner run() function.
+ * This function is the overload of the runner::run() function.
  * It takes care of waiting for more data and run your process
  * by calling the do_work() function.
  *
@@ -162,7 +163,7 @@ namespace cppthread
  *          // initialize my variable
  *          m_my_var = allocate_object();
  *
- *          snap_worker::run();
+ *          worker::run();
  *
  *          // make sure to delete that resource
  *          delete_object(m_my_var);
@@ -174,14 +175,19 @@ namespace cppthread
 /** \fn worker<T>::do_work()
  * \brief Worker Function.
  *
- * This function is your worker function which will perform work
- * against the work load automatically retrieved in the run()
+ * This function is your worker function which performs work
+ * against a pay load automatically retrieved in the run()
  * function.
  *
  * Your load is available in the f_payload variable member.
- * You are free to modify it. The snap_worker object ignores
+ * You are free to modify it. The worker object ignores
  * its content. It retrieved it from the input fifo (f_in)
- * and will save it in the output fifo once done (f_out).
+ * and saves it in the output fifo once done (f_out) assuming
+ * your function returns true and there is an output fifo.
+ *
+ * \note
+ * The f_out fifo can be set to a null pointer in which case,
+ * no forwarding happens.
  *
  * \return true if the work is considered successful and the
  * payload should be forwarded. On false, the payload does
