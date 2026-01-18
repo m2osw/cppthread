@@ -38,6 +38,7 @@
 // snapdev
 //
 #include    <snapdev/not_used.h>
+#include    <snapdev/is_smart_pointer.h>
 
 
 // C++
@@ -81,18 +82,6 @@ private:
     {
     };
 
-    template<typename C>
-        struct is_shared_ptr
-            : std::false_type
-    {
-    };
-
-    template<typename C>
-        struct is_shared_ptr<std::shared_ptr<C>>
-            : std::true_type
-    {
-    };
-
     /** \brief Validate item.
      *
      * This function checks whether the T::valid_workload() function
@@ -106,7 +95,7 @@ private:
      * \return true if the valid_workload() returns true, false otherwise.
      */
     template<typename C>
-    typename std::enable_if<!is_shared_ptr<C>::value
+    typename std::enable_if<!snapdev::is_shared_ptr<C>::value
                         && item_has_predicate<C, bool()>::value
                 , bool>::type
         validate_item(C const & item)
@@ -125,7 +114,7 @@ private:
      * \return Always true.
      */
     template<typename C>
-    typename std::enable_if<!is_shared_ptr<C>::value
+    typename std::enable_if<!snapdev::is_shared_ptr<C>::value
                          && !item_has_predicate<C, bool()>::value
                 , bool>::type
         validate_item(C const & item)
@@ -147,7 +136,7 @@ private:
      * \return Always true.
      */
     template<typename C>
-    typename std::enable_if<is_shared_ptr<C>::value
+    typename std::enable_if<snapdev::is_shared_ptr<C>::value
                         && item_has_predicate<typename C::element_type, bool()>::value
                 , bool>::type
         validate_item(C const & item)
@@ -166,7 +155,7 @@ private:
      * \return Always true.
      */
     template<typename C>
-    typename std::enable_if<is_shared_ptr<C>::value
+    typename std::enable_if<snapdev::is_shared_ptr<C>::value
                          && !item_has_predicate<typename C::element_type, bool()>::value
                 , bool>::type
         validate_item(C const & item)
