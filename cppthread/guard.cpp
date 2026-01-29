@@ -18,9 +18,9 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
- * \brief Implementation of the Thread Runner and Managers.
+ * \brief Implementation of the thread guard.
  *
- * This file includes the implementation used by the cppthread environment.
+ * This file implements an RAII way to lock a part of your code using a guard.
  */
 
 

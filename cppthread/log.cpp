@@ -299,7 +299,7 @@ void logger::lock()
     }
 
     // we have to lock only once so we use a flag to know whether we're
-    // already locked, if so, we unlock immediately (but we stil have
+    // already locked, if so, we unlock immediately (but we still have
     // one lock in place)
     //
     err = pthread_mutex_lock(&g_log_recursive_mutex);
@@ -369,8 +369,12 @@ void logger::unlock()
 /** \brief Save the level at which to log this message.
  *
  * This function gets called whenever you apply a level. This is expected
- * as the very first parameter of the log. It may be used to shortcut
- * the addition of other message data to avoid wasting time.
+ * as the very first parameter of the log. It is very important to specify
+ * the level first because this function locks the cppthread logger which
+ * is otherwise shared between all the threads. Thus not doing so first
+ * is likely to create mangled messages if not crashes of your application.
+ *
+ * The end() function unlock()'s the logger.
  *
  * The supported levels are defined in the log_level_t enumeration:
  *
@@ -380,14 +384,21 @@ void logger::unlock()
  * * log_level_t::error
  * * log_level_t::fatal
  *
- * Note that the fatal error level has no specific effect. It just
- * displays a level of "fatal". If you want to stop the software,
- * you are in charge of calling std::terminate() or exit().
+ * The fatal error level has no specific effect. It just displays a level
+ * of "fatal". If you want to stop the software, you are in charge of
+ * calling std::terminate() or throw an exception that won't be caught
+ * such as the advgetopt::getopt_exit().
  *
  * \note
- * The snaplogger has a special handler you can setup to capture fatal
- * errors which allows you to exit your software when such an error
- * occurs. It uses an exception for the purpose.
+ * The snaplogger captures these logs and it has a special handler you
+ * can setup to capture fatal errors. This allows your application to exit
+ * your software when such an error occurs. It uses an exception for the
+ * purpose.
+ *
+ * \note
+ * Although calling this function multiple times is safe, it has the
+ * side effect of counting each level so it really should be called only
+ * once.
  *
  * \param[in] level  The level this message represents.
  *
@@ -405,6 +416,11 @@ logger & logger::operator << (log_level_t const & level)
     }
 
     lock();
+    if(f_log.tellp() != 0)
+    {
+        unlock();
+        throw invalid_log_level("log level specified when logger buffer is not empty.");
+    }
     f_level = level;
     ++f_counters[static_cast<int>(level)];
     return *this;
@@ -424,7 +440,6 @@ logger & logger::operator << (log_level_t const & level)
  */
 logger & logger::operator << (logger & (*func)(logger &))
 {
-    lock();
     func(*this);
     return *this;
 }
@@ -447,7 +462,7 @@ void logger::reset_counters()
 
 /** \brief Get one of the level counters.
  *
- * WHenever a log is sent to the cppthread logger, one of its counter
+ * Whenever a log is sent to the cppthread logger, one of its counter
  * gets incremented by 1. This is useful if you want to know whether
  * error messages were sent to the logger, see the get_errors() function
  * too as it includes a total of all the errors that happened.
@@ -525,36 +540,35 @@ std::uint32_t logger::get_warnings() const
  * the logger. It processes the message and sends it to the log
  * callback function or prints it to std::cerr.
  *
- * \note
- * If not callback was setup, the function throws away any debug
+ * If no callback was setup, the function throws away any debug
  * messages and prints out the other messages to std::cerr.
  *
  * \note
- * The log system has a lock in place whenever you start sending log
- * data. This function unlocks the logger before returning. It is
- * also exception safe.
+ * There is only one logger for the cppthread log system. It gets locked
+ * whenever you send the message level, which is expected to be done first.
+ * The end() function is in charge of unlocking before printing out the
+ * message or calling your callback.
  *
  * \return A reference to the logger object.
  */
 logger & logger::end()
 {
-    // the std::cerr requires a lock so we keep the logger locked
+    // the logger is still locked at this point so:
+    // 1. capture a copy of the data
+    // 2. reset the message for next time
+    // 3. unlock
+    // 4. display the message or call the callback
     //
+    log_callback callback;
+    log_level_t level;
+    std::string msg;
     try
     {
-        if(g_log_callback != nullptr)
-        {
-            g_log_callback(f_level, f_log.str());
-        }
-        else if(f_level >= log_level_t::info)
-        {
-            std::cerr << to_string(f_level)
-                      << ": "
-                      << f_log.str()
-                      << std::endl;
-        }
-
+        callback = g_log_callback;
+        level = f_level;
+        msg = f_log.str();
         f_log.str(std::string());
+        unlock();
     }
     catch(...)
     {
@@ -562,7 +576,19 @@ logger & logger::end()
         throw;
     }
 
-    unlock();
+    if(callback != nullptr)
+    {
+        callback(level, msg);
+    }
+    else if(level >= log_level_t::info)
+    {
+        // the std::cerr requires a lock when multiple << are used
+        // so instead create one string with the entire message first
+        // including the newline
+        //
+        msg = to_string(level) + ": " + msg + "\n";
+        std::cerr << msg;
+    }
 
     return *this;
 }
