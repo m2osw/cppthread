@@ -102,11 +102,11 @@ public:
     {
         if(pool_size == 0)
         {
-            throw out_of_range("the pool size must be a positive number (1 or more)");
+            throw out_of_range("the pool size must be a positive number (1 or more).");
         }
-        if(pool_size > 1000)
+        if(pool_size > 1'000)
         {
-            throw out_of_range("pool size too large (we accept up to 1000 at this time, which is already very very large!)");
+            throw out_of_range("pool size too large (we accept up to 1000 at this time, which is already very very large).");
         }
         f_workers.reserve(pool_size);
         for(std::size_t i(0); i < pool_size; ++i)
@@ -135,7 +135,7 @@ public:
     {
         if(static_cast<std::size_t>(i) >= f_workers.size())
         {
-            throw out_of_range("snap::thread::pool::get_worker() called with an index out of bounds.");
+            throw out_of_range("cppthread::pool::get_worker() called with an index out of bounds.");
         }
         return f_workers[i]->get_worker();
     }
@@ -144,7 +144,7 @@ public:
     {
         if(static_cast<std::size_t>(i) >= f_workers.size())
         {
-            throw out_of_range("snap::thread::pool::get_worker() const called with an index out of bounds.");
+            throw out_of_range("cppthread::pool::get_worker() const called with an index out of bounds.");
         }
         return f_workers[i]->get_worker();
     }
