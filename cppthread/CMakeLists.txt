@@ -29,6 +29,7 @@ configure_file(
 )
 
 add_library(${PROJECT_NAME} SHARED
+    deswappify.cpp
     guard.cpp
     item_with_predicate.cpp
     life.cpp

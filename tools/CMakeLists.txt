@@ -146,4 +146,36 @@ install(
 )
 
 
+##
+## build the deswappify tool
+##
+project(deswappify)
+
+add_executable(${PROJECT_NAME}
+    deswappify.cpp
+)
+
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${LIBEXCEPT_INCLUDE_DIRS}
+        ${SNAPDEV_INCLUDE_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME}
+    cppthread
+    ${LIBEXCEPT_LIBRARIES}
+)
+
+install(
+    TARGETS
+        ${PROJECT_NAME}
+
+    RUNTIME DESTINATION
+        bin
+
+    COMPONENT
+        runtime
+)
+
+
 # vim: ts=4 sw=4 et nocindent
