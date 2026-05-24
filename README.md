@@ -193,6 +193,24 @@ then an error is printed in `std::cerr` and `std::terminate()`
 gets called.
 
 
+# Getting a Stacktrace of all Threads
+
+gdb allows us to retrieve the stack trace of all the thread with a one liner.
+In most cases, though, you probably want to save the output to a file so
+you can look at it in your text editor and search things, remove stack traces
+of threads that are just waiting for work, etc.
+
+Here are the commands one would use to save all the stack traces at once:
+
+    set logging file deadlock.txt
+    set logging redirect on
+    set logging enabled on
+    thread apply all backtrace
+    set logging enabled off
+
+And then edit the `deadlock.txt` file. The stack trace will be long if you
+have many threads.
+
 # License
 
 The project is covered by the GPL 2.0 license.

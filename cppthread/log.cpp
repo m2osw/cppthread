@@ -69,9 +69,9 @@ namespace cppthread
  * So we call this function from the constructor of the logger.
  *
  * \note
- * This means it's not exact _properly initialized_ since the constructor
+ * This means it's not 100% _properly initialized_ since the constructor
  * did not yet return. However, it is guaranteed to work properly since
- * we do not allow derivations or virtual tables.
+ * we do not allow derivations or virtual tables on the logger class.
  */
 extern void create_system_mutex();
 

@@ -91,14 +91,14 @@ public:
 
 
 /** \var pthread_mutex_t mutex_impl::f_condition
- * \brief Condition linked to the mutex to support signalling.
+ * \brief Condition linked to the mutex to support signaling.
  *
  * We often have to signal that a thread is done in regard to something or
- * other. That will wake up another thread which can then take over the
+ * other. The condition wakes up another thread which can then take over the
  * next step of the work.
  *
  * The condition is used for that purpose as we can wait on it with the
- * attached mutex.
+ * attached mutex without wasting any CPU time.
  */
 
 
@@ -173,7 +173,7 @@ public:
  *
  * \code
  * {
- *    cppthread::guard lock(&my_mutex)
+ *    cppthread::guard lock(my_mutex)
  *    ... // protected code
  * }
  * \endcode
@@ -196,19 +196,19 @@ public:
  *
  *      // wait on the signal forever
  *      {
- *          cppthread::guard lock(&my_mutex);
+ *          cppthread::guard lock(my_mutex);
  *          my_mutex.wait();
  *      }
  *
  *      // wait on the signal for the specified amount of time
  *      {
- *          cppthread::guard lock(&my_mutex);
+ *          cppthread::guard lock(my_mutex);
  *          my_mutex.timed_wait(1000000UL); // wait up to 1 second
  *      }
  *
  *      // wait on the signal for until date or later or the signal
  *      {
- *          cppthread::guard lock(&my_mutex);
+ *          cppthread::guard lock(my_mutex);
  *          my_mutex.dated_wait(date); // wait on signal or until date
  *      }
  * }
@@ -900,9 +900,11 @@ mutex *         g_system_mutex = nullptr;
  * with a call to std::terminate().
  *
  * Another way to safely create a new mutex is to use a static variable
- * in a function. The initialization of that static variable will always
- * be safe so that mutex will be available to all your threads even if
- * you already had multiple threads the first time that function was called.
+ * in a function. The initialization of that static variable is always
+ * safe so that mutex is available to all your threads even if you already
+ * had multiple threads the first time that function was called. This safety
+ * is guaranteed by C++ which uses its own mutex to initialize static
+ * variables.
  *
  * \code
  *     void myfunc()
@@ -920,7 +922,7 @@ mutex *         g_system_mutex = nullptr;
  * local mutex (just make sure you don't copy that mutex).
  *
  * \note
- * Although this function gets called from the logger contructor, it is not
+ * Although this function gets called from the logger constructor, it is not
  * used by the logger at all.
  */
 void create_system_mutex()
