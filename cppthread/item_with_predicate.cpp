@@ -143,7 +143,7 @@ item_with_predicate::~item_with_predicate()
  * valid_workload() function returns true and this very workload item
  * gets processed.
  *
- * \exception cppthread_in_use_error
+ * \exception in_use
  * This exception is raised if this item was already sent to a thread for
  * processing since by then it's too late, you just can't hope to stop
  * the processing or restart it.
@@ -160,7 +160,7 @@ void item_with_predicate::add_dependency(pointer_t item)
 
     if(f_processing)
     {
-        throw in_use_error("workload already being processed, you can't add more dependencies to it.");
+        throw in_use("workload already being processed, you can't add more dependencies to it.");
     }
 
     f_dependencies.push_back(item);
@@ -173,7 +173,7 @@ void item_with_predicate::add_dependency(pointer_t item)
  * parameter to this item_with_predicate object. This is equivalent
  * to adding the dependencies one at a time to this item.
  *
- * \exception cppthread_in_use_error
+ * \exception in_use
  * This exception is raised if this item was already sent to a thread for
  * processing since by then it's too late, you just can't hope to stop
  * the processing or restart it.
@@ -186,7 +186,7 @@ void item_with_predicate::add_dependencies(dependencies_t const & dependencies)
 
     if(f_processing)
     {
-        throw in_use_error("workload already being processed, you can't add more dependencies to it.");
+        throw in_use("workload already being processed, you can't add more dependencies to it.");
     }
 
     f_dependencies.insert(f_dependencies.begin(), dependencies.cbegin(), dependencies.cend());

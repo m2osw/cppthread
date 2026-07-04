@@ -35,8 +35,6 @@ Here are the various objects found in the library:
 * Logging capability (`log`)
 * Thread Specific Exceptions (`cppthread_exception`)
 * Listing processes/threads
-* Loading of plugins (.so files, `plugins`)
-* Signals between plugins (`signal`)
 
 
 # Safety

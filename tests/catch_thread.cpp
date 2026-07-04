@@ -423,7 +423,7 @@ CATCH_TEST_CASE("cppthread_errors", "[thread][invalid]")
 
         CATCH_REQUIRE_THROWS_MATCHES(
                   cppthread::thread("breaks", &r)
-                , cppthread::in_use_error
+                , cppthread::in_use
                 , Catch::Matchers::ExceptionMessage("cppthread_exception: this runner (test-runner) is already in use."));
     }
     CATCH_END_SECTION()

@@ -18,9 +18,10 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
- * \brief Implementation of the Thread Runner and Managers.
+ * \brief Implementation of the thread manager.
  *
- * This file includes the implementation used by the cppthread environment.
+ * This file includes the implementation of the thread manager which starts
+ * and stops a thread runner is controls.
  */
 
 
@@ -117,6 +118,11 @@ thread::thread(std::string const & name, std::shared_ptr<runner> runner)
  *
  * We can create the thread with a bare pointer or a shared pointer.
  * This function does the remaining of the initialization.
+ *
+ * \exception in_use
+ * This exception is raised if the thread pointer is not nullptr. This
+ * means the runner is already in use by another thread and a specific
+ * runner object can only be assigned to one single thread.
  */
 void thread::init()
 {
@@ -126,7 +132,7 @@ void thread::init()
     }
     if(f_runner->f_thread != nullptr)
     {
-        throw in_use_error(
+        throw in_use(
                       "this runner ("
                     + f_runner->get_name()
                     + ") is already in use.");
@@ -684,7 +690,19 @@ void thread::stop(std::function<void(thread *)> callback)
     // add fields to his class and fill in whatever results he wants
     // there; it is going to work much better that way
     //
-    pthread_join(f_thread_id, nullptr);
+    int const err(pthread_join(f_thread_id, nullptr));
+    if(err != 0)
+    {
+        // LCOV_EXCL_START
+        log << log_level_t::warning
+            << "joining the thread returned error #"
+            << err
+            << " -- "
+            << strerror(err)
+            << '.'
+            << end;
+        // LCOV_EXCL_STOP
+    }
 
     // at this point the thread has fully exited
 

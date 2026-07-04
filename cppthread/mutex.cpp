@@ -18,9 +18,21 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 /** \file
- * \brief Implementation of the Thread Runner and Managers.
+ * \brief Implementation of the mutex class.
  *
- * This file includes the implementation used by the cppthread environment.
+ * This file includes the implementation used by the mutex class.
+ *
+ * The mutex is used to lock areas that need to be executed by a single
+ * thread at a time. This implementation allows for:
+ *
+ * * lock() -- wait until it can lock
+ * * try_lock() -- try a lock, if it fails return immediately
+ * * timed_wait() -- try to lock for the specified amount of time
+ * * dated_wait() -- try to lock by the specified date
+ * * signal() -- send a signal
+ * * safe_signal() -- safely send a signal (slow than signal())
+ * * wait() -- wait until a signal is received
+ * * broadcast() -- send a signal to all the waiting threads
  */
 
 
@@ -222,7 +234,7 @@ public:
  * is possibly accessed by more than one thread. This is usually
  * the case in the constructor of your objects.
  *
- * \exception cppthread_exception_invalid_error
+ * \exception invalid_error
  * If any one of the initialization functions fails, this exception is
  * raised. The function also logs the error.
  */
@@ -230,6 +242,7 @@ mutex::mutex()
     : f_impl(std::make_shared<detail::mutex_impl>())
 {
     // initialize the mutex
+    //
     pthread_mutexattr_t mattr;
     int err(pthread_mutexattr_init(&mattr));
     if(err != 0)
@@ -237,6 +250,8 @@ mutex::mutex()
         log << log_level_t::fatal
             << "a mutex attribute structure could not be initialized, error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         throw invalid_error("pthread_muteattr_init() failed");
     }
@@ -246,6 +261,8 @@ mutex::mutex()
         log << log_level_t::fatal
             << "a mutex attribute structure type could not be setup, error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         pthread_mutexattr_destroy(&mattr);
         throw invalid_error("pthread_muteattr_settype() failed");
@@ -256,6 +273,8 @@ mutex::mutex()
         log << log_level_t::fatal
             << "a mutex structure could not be initialized, error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         pthread_mutexattr_destroy(&mattr);
         throw invalid_error("pthread_mutex_init() failed");
@@ -266,12 +285,15 @@ mutex::mutex()
         log << log_level_t::fatal
             << "a mutex attribute structure could not be destroyed, error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
         throw invalid_error("pthread_mutexattr_destroy() failed");
     }
 
     // initialize the condition
+    //
     pthread_condattr_t cattr;
     err = pthread_condattr_init(&cattr);
     if(err != 0)
@@ -279,6 +301,8 @@ mutex::mutex()
         log << log_level_t::fatal
             << "a mutex condition attribute structure could not be initialized, error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
         throw invalid_error("pthread_condattr_init() failed");
@@ -289,6 +313,8 @@ mutex::mutex()
         log << log_level_t::fatal
             << "a mutex condition structure could not be initialized, error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         pthread_condattr_destroy(&cattr);
         pthread_mutex_destroy(&f_impl->f_mutex);
@@ -300,6 +326,8 @@ mutex::mutex()
         log << log_level_t::fatal
             << "a mutex condition attribute structure could not be destroyed, error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         pthread_mutex_destroy(&f_impl->f_mutex);
         throw invalid_error("pthread_condattr_destroy() failed");
@@ -313,16 +341,11 @@ mutex::mutex()
  * the mutex and conditions get destroyed.
  *
  * This destructor verifies that the mutex is not currently locked. A
- * locked mutex can't be destroyed. If still locked, then an error is
- * sent to the logger and the function calls exit(1).
+ * locked mutex cannot be destroyed. If still locked, then an error is
+ * sent to the logger and the function calls std::terminate().
  */
 mutex::~mutex()
 {
-    // Note that the following reference count test only ensure that
-    // you don't delete a mutex which is still locked; however, if
-    // you still have multiple threads running, we can't really know
-    // if another thread is not just about to use this thread...
-    //
     if(f_reference_count != 0UL)
     {
         // we cannot legally throw in a destructor so we instead generate a fatal error
@@ -340,6 +363,8 @@ mutex::~mutex()
         log << log_level_t::error
             << "a mutex condition destruction generated error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
     }
     err = pthread_mutex_destroy(&f_impl->f_mutex);
@@ -348,6 +373,8 @@ mutex::~mutex()
         log << log_level_t::fatal
             << "a mutex destruction generated error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
     }
 }
@@ -359,11 +386,7 @@ mutex::~mutex()
  * available if it is not currently available. To avoid waiting one may
  * want to use the try_lock() function instead.
  *
- * Although the function cannot fail, the call can lock up a process if
- * two or more mutexes are used and another thread is already waiting
- * on this process.
- *
- * \exception cppthread_exception_invalid_error
+ * \exception invalid_error
  * If the lock fails, this exception is raised.
  */
 void mutex::lock()
@@ -379,9 +402,6 @@ void mutex::lock()
             << end;
         throw invalid_error("pthread_mutex_lock() failed");
     }
-
-    // note: we do not need an atomic call since we
-    //       already know we are running alone here...
     ++f_reference_count;
 }
 
@@ -392,7 +412,7 @@ void mutex::lock()
  * because another process already locked it, then the function returns
  * immediately with false.
  *
- * \exception cppthread_exception_invalid_error
+ * \exception invalid_error
  * If the lock fails, this exception is raised.
  *
  * \return true if the lock succeeded, false otherwise.
@@ -402,19 +422,19 @@ bool mutex::try_lock()
     int const err(pthread_mutex_trylock(&f_impl->f_mutex));
     if(err == 0)
     {
-        // note: we do not need an atomic call since we
-        //       already know we are running alone here...
         ++f_reference_count;
         return true;
     }
 
     // failed because another thread has the lock?
+    //
     if(err == EBUSY)
     {
         return false;
     }
 
     // another type of failure
+    //
     log << log_level_t::error
         << "a mutex try lock generated error #"
         << err
@@ -433,28 +453,27 @@ bool mutex::try_lock()
  *
  * The unlock never waits.
  *
- * \exception cppthread_exception_invalid_error
+ * It is safer to make use of the cppthread::guard to ensure the same
+ * number of lock() and unlock() to a mutex.
+ *
+ * \exception invalid_error
  * If the unlock fails, this exception is raised.
  *
- * \exception cppthread_exception_not_locked_error
+ * \exception not_locked
  * If the function is called too many times, then the lock count is going
  * to be zero and this exception will be raised.
  */
 void mutex::unlock()
 {
-    // We can't unlock if it wasn't locked before!
-    if(f_reference_count <= 0UL)
+    // we can't unlock if it wasn't locked before!
+    //
+    if(f_reference_count == 0UL)
     {
         log << log_level_t::fatal
-            << "attempting to unlock a mutex when it is still locked "
-            << f_reference_count
-            << " times"
+            << "attempting to unlock a mutex when it is not currently locked."
             << end;
-        throw not_locked_error("unlock was called too many times");
+        throw not_locked("unlock was called too many times");
     }
-
-    // NOTE: we do not need an atomic call since we
-    //       already know we are running alone here...
     --f_reference_count;
 
     int const err(pthread_mutex_unlock(&f_impl->f_mutex));
@@ -471,6 +490,58 @@ void mutex::unlock()
 }
 
 
+/** \brief Verify that the mutex is locked exactly once.
+ *
+ * This function makes sure that the mutex is locked exactly once,
+ * which is important when ready to wait() on a signal.
+ *
+ * For any wait on a mutex condition to work, it \b must have the mutex
+ * locked exactly once. It cannot be unlocked nor locked more than once.
+ * According to the documentation, a recursive lock is "dangerous"
+ * when used with a condition variable because the kernel only unlock()
+ * the mutex once before performing the wait. Since we have a reference
+ * counter, we can verify that this is the case and fail in case it is
+ * not.
+ *
+ * \note
+ * The wait functions are expected to be called within a guarded block.
+ *
+ * \note
+ * Just in case, I created a test (see tests/recursive_mutex_test.cpp)
+ * which verifies that this is indeed true and it is. The pthread
+ * implementation does not verify anything and if the unlock does
+ * not properly give other threads the chance to send signals or
+ * the lock was not locked at all, you get some weird behaviors
+ * or just a plain old deadlock.
+ *
+ * \exception not_locked_once_error
+ * The mutex is not locked exactly once. The wait() won't work properly
+ * and would likely generate a deadlock.
+ */
+void mutex::is_locked_once()
+{
+    // to make this test a strong test, we need to guard the function
+    //
+    // i.e. if the current thread does not have a lock at all, then
+    //      this guard waits on other threads having such; then it
+    //      locks once and we fail the following test which expects
+    //      two locks to be in place (the lock of the wait() caller
+    //      and this very lock)
+    //
+    guard lock(*this);
+
+    if(f_reference_count != 2UL)
+    {
+        log << log_level_t::fatal
+            << "attempt to wait on a mutex when it is not locked exactly once; current count is "
+            << f_reference_count - 1UL
+            << '.'
+            << end;
+        throw not_locked_once("a wait function requires the mutex to be locked exactly once.");
+    }
+}
+
+
 /** \brief Wait on a mutex condition.
  *
  * At times it is useful to wait on a mutex to become available without
@@ -480,34 +551,15 @@ void mutex::unlock()
  * This version of the wait() blocks until a signal is received.
  *
  * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredictable ways.
+ * This function cannot be called if the mutex is not locked exactly once.
  *
- * \exception cppthread_exception_not_locked_once_error
- * This exception is raised if the reference count is not exactly 1.
- * In other words, the mutex must be locked by the caller but only
- * one time.
- *
- * \exception cppthread_exception_mutex_failed_error
+ * \exception mutex_failed
  * This exception is raised in the event the conditional wait fails.
  */
 void mutex::wait()
 {
-    // For any mutex wait to work, we MUST have the
-    // mutex locked already and just one time.
-    //
-    // note: the 1 time is just for assurance that it will
-    //       work in most cases; it should work even when locked
-    //       multiple times, but it is less likely. For sure, it
-    //       has to be at least once.
-    //if(f_reference_count != 1UL)
-    //{
-    //    log << log_level_t::fatal
-    //        << "attempting to wait on a mutex when it is not locked exactly once, current count is "
-    //        << f_reference_count
-    //        << end;
-    //    throw exception_not_locked_once_error();
-    //}
+    is_locked_once();
+
     int const err(pthread_cond_wait(&f_impl->f_condition, &f_impl->f_mutex));
     if(err != 0)
     {
@@ -518,7 +570,7 @@ void mutex::wait()
             << " -- "
             << strerror(err)
             << end;
-        throw mutex_failed_error("pthread_cond_wait() failed");
+        throw mutex_failed("pthread_cond_wait() failed");
     }
 }
 
@@ -532,13 +584,9 @@ void mutex::wait()
  * number of micro seconds elapsed and then returns.
  *
  * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredictable ways.
+ * This function cannot be called if the mutex is not locked exactly once.
  *
- * \exception cppthread_exception_system_error
- * This exception is raised if a function returns an unexpected error.
- *
- * \exception cppthread_exception_mutex_failed_error
+ * \exception mutex_failed
  * This exception is raised when the mutex wait function fails.
  *
  * \param[in] usecs  The maximum number of micro seconds to wait until you
@@ -564,13 +612,9 @@ bool mutex::timed_wait(std::uint64_t const usecs)
  * number of nano seconds elapsed and then returns.
  *
  * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredictable ways.
+ * This function cannot be called if the mutex is not locked exactly once.
  *
- * \exception cppthread_exception_system_error
- * This exception is raised if a function returns an unexpected error.
- *
- * \exception cppthread_exception_mutex_failed_error
+ * \exception mutex_failed
  * This exception is raised when the mutex wait function fails.
  *
  * \param[in] nsecs  The maximum number of nano seconds to wait until you
@@ -582,7 +626,7 @@ bool mutex::timed_wait(std::uint64_t const usecs)
  */
 bool mutex::timed_wait(timespec const & nsecs)
 {
-    int err(0);
+    is_locked_once();
 
     // get clock time (a.k.a. now)
     //
@@ -592,10 +636,10 @@ bool mutex::timed_wait(timespec const & nsecs)
     //
     abstime += nsecs;
 
-    err = pthread_cond_timedwait(
+    int const err(pthread_cond_timedwait(
               &f_impl->f_condition
             , &f_impl->f_mutex
-            , &abstime);
+            , &abstime));
     if(err != 0)
     {
         if(err == ETIMEDOUT)
@@ -615,7 +659,7 @@ bool mutex::timed_wait(timespec const & nsecs)
             << abstime.tv_nsec
             << ")"
             << end;
-        throw mutex_failed_error("pthread_cond_timedwait() failed");
+        throw mutex_failed("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -628,10 +672,9 @@ bool mutex::timed_wait(timespec const & nsecs)
  * specified date is passed.
  *
  * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredictable ways.
+ * This function cannot be called if the mutex is not locked exactly once.
  *
- * \exception cppthread_exception_mutex_failed_error
+ * \exception mutex_failed
  * This exception is raised whenever the thread wait function fails.
  *
  * \param[in] usec  The date when the mutex times out in microseconds.
@@ -654,10 +697,9 @@ bool mutex::dated_wait(std::uint64_t const usec)
  * specified date is passed.
  *
  * \warning
- * This function cannot be called if the mutex is not locked or the
- * wait will fail in unpredictable ways.
+ * This function cannot be called if the mutex is not locked exactly once.
  *
- * \exception cppthread_exception_mutex_failed_error
+ * \exception mutex_failed
  * This exception is raised whenever the thread wait function fails.
  *
  * \param[in] date  The date when the mutex times out in nanoseconds.
@@ -667,23 +709,7 @@ bool mutex::dated_wait(std::uint64_t const usec)
  */
 bool mutex::dated_wait(timespec const & date)
 {
-    // For any mutex wait to work, we MUST have the
-    // mutex locked already and just one time.
-    //
-    // note: the 1 time is just for assurance that it will
-    //       work in most cases; it should work even when locked
-    //       multiple times, but it is less likely. For sure, it
-    //       has to be at least once.
-    //if(f_reference_count != 1UL)
-    //{
-    //    log << log_level_t::fatal
-    //        << "attempting to dated wait until "
-    //        << usec
-    //        << " msec on a mutex when it is not locked exactly once, current count is "
-    //        << f_reference_count
-    //        << end;
-    //    throw exception_not_locked_once_error();
-    //}
+    is_locked_once();
 
     int const err(pthread_cond_timedwait(
               &f_impl->f_condition
@@ -697,6 +723,7 @@ bool mutex::dated_wait(timespec const & date)
         }
 
         // an error occurred!
+        //
         log << log_level_t::error
             << "a mutex conditional wait generated error #"
             << err
@@ -708,7 +735,7 @@ bool mutex::dated_wait(timespec const & date)
             << date.tv_nsec
             << ")"
             << end;
-        throw mutex_failed_error("pthread_cond_timedwait() failed");
+        throw mutex_failed("pthread_cond_timedwait() failed");
     }
 
     return true;
@@ -728,7 +755,7 @@ bool mutex::dated_wait(timespec const & date)
  * If you need to wake up exactly one other thread, then make sure to
  * use the safe_signal() function instead.
  *
- * \exception cppthread_exception_invalid_error
+ * \exception invalid_error
  * If one of the pthread system functions return an error, the function
  * raises this exception.
  *
@@ -742,6 +769,8 @@ void mutex::signal()
         log << log_level_t::fatal
             << "a mutex condition signal generated error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         throw invalid_error("pthread_cond_signal() failed");
     }
@@ -756,7 +785,7 @@ void mutex::signal()
  * The function ensures that the mutex is locked before sending
  * the signal so you do not have to lock the mutex yourself.
  *
- * \exception cppthread_exception_invalid_error
+ * \exception invalid_error
  * If one of the pthread system functions return an error, the function
  * raises this exception.
  *
@@ -772,6 +801,8 @@ void mutex::safe_signal()
         log << log_level_t::fatal
             << "a mutex condition signal generated error #"
             << err
+            << " -- "
+            << strerror(err)
             << end;
         throw invalid_error("pthread_cond_signal() failed");
     }
@@ -782,7 +813,46 @@ void mutex::safe_signal()
  *
  * Our mutexes include a condition that get signaled by calling this
  * function. This function actually signals all the threads that are
- * currently listening to the mutex signal. The order in which the
+ * currently waiting for the mutex signal. The order in which the
+ * threads get awaken is unspecified.
+ *
+ * The function ensures that the mutex is locked before broadcasting
+ * the signal so you do not have to lock the mutex yourself.
+ *
+ * \note
+ * We also offer a safe_broadcast(). If you expect absolutely all the
+ * other threads to receive the signal, then make sure to use the
+ * safe_broadcast() function instead. However, if you are already in
+ * a guarded block, then there is no need for an additional lock and
+ * this function will work exactly as expected.
+ *
+ * \exception invalid_error
+ * If one of the pthread system functions return an error, the function
+ * raises this exception.
+ *
+ * \sa safe_broadcast()
+ */
+void mutex::broadcast()
+{
+    int const err(pthread_cond_broadcast(&f_impl->f_condition));
+    if(err != 0)
+    {
+        log << log_level_t::fatal
+            << "a mutex signal broadcast generated error #"
+            << err
+            << " -- "
+            << strerror(err)
+            << end;
+        throw invalid_error("pthread_cond_broadcast() failed");
+    }
+}
+
+
+/** \brief Broadcast a mutex signal.
+ *
+ * Our mutexes include a condition that get signaled by calling this
+ * function. This function actually signals all the threads that are
+ * currently waiting for the mutex signal. The order in which the
  * threads get awaken is unspecified.
  *
  * The function ensures that the mutex is locked before broadcasting
@@ -790,7 +860,7 @@ void mutex::safe_signal()
  * is not required to lock a mutex before broadcasting a signal. The
  * effects are similar.
  *
- * \exception cppthread_exception_invalid_error
+ * \exception invalid_error
  * If one of the pthread system functions return an error, the function
  * raises this exception.
  *
@@ -806,45 +876,8 @@ void mutex::safe_broadcast()
         log << log_level_t::fatal
             << "a mutex signal broadcast generated error #"
             << err
-            << end;
-        throw invalid_error("pthread_cond_broadcast() failed");
-    }
-}
-
-
-/** \brief Broadcast a mutex signal.
- *
- * Our mutexes include a condition that get signaled by calling this
- * function. This function actually signals all the threads that are
- * currently listening to the mutex signal. The order in which the
- * threads get awaken is unspecified.
- *
- * The function ensures that the mutex is locked before broadcasting
- * the signal so you do not have to lock the mutex yourself.
- *
- * \note
- * We also offer a safe_broadcast(). If you expect absolutely all the
- * other threads to receive the signal, then make sure to use the
- * safe_broadcast() function instead. However, if you are already in
- * a guarded block, then there is no need for an additional lock and
- * this function will work exactly as expected.
- *
- * \exception cppthread_exception_invalid_error
- * If one of the pthread system functions return an error, the function
- * raises this exception.
- *
- * \sa safe_broadcast()
- */
-void mutex::broadcast()
-{
-    guard lock(*this);
-
-    int const err(pthread_cond_broadcast(&f_impl->f_condition));
-    if(err != 0)
-    {
-        log << log_level_t::fatal
-            << "a mutex signal broadcast generated error #"
-            << err
+            << " -- "
+            << strerror(err)
             << end;
         throw invalid_error("pthread_cond_broadcast() failed");
     }

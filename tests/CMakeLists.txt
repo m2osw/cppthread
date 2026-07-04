@@ -64,4 +64,30 @@ if(SnapCatch2_FOUND)
 
 endif(SnapCatch2_FOUND)
 
+##
+## build the low level thread test (proper lock/unlock)
+##
+project(recursive-mutex-test)
+
+add_executable(${PROJECT_NAME}
+    recursive_mutex_test.cpp
+)
+
+
+##
+## build the low level thread test (extra lock/unlock in thread one)
+##
+project(recursive-mutex-test-with-double-lock)
+
+add_executable(${PROJECT_NAME}
+    recursive_mutex_test.cpp
+)
+
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        EXTRA_LOCK
+)
+
+
+
 # vim: ts=4 sw=4 et

@@ -19,19 +19,20 @@
 #pragma once
 
 /** \file
- * \brief Thread Runner and Managers.
+ * \brief Mutex lock.
  *
- * This file includes the declaration and implementation (For templates)
- * of classes used to manage threads the easy way. Especially, our
- * implementation is aware of object destructors so a thread manager
- * (snap_thread) can be destroyed. It will automatically and properly
- * wait for its runner (the actual system pthread) to exit before
- * finishing up its and its runner clean up.
+ * This file includes the declaration of the C++ Thread `mutex`. This is
+ * used for synchronization between threads by locking access.
+ *
+ * This is a recursive mutex. It is not copyable. You can, however, use it
+ * in a shared pointer which can be copied (all pointers will, of course,
+ * point to the same mutex).
  */
 
 
 // C++
 //
+#include    <atomic>
 #include    <cstdint>
 #include    <memory>
 #include    <vector>
@@ -49,8 +50,6 @@ class mutex_impl;
 }
 
 
-// a mutex to ensure single threaded work
-//
 class mutex
 {
 public:
@@ -78,12 +77,14 @@ public:
     void                safe_broadcast();
 
 private:
+    void                is_locked_once();
+
     std::shared_ptr<detail::mutex_impl>
                         f_impl;
 
-    std::uint32_t       f_reference_count = 0;
+    std::atomic<std::uint32_t>
+                        f_reference_count = 0;
 };
-
 
 
 extern mutex *          g_system_mutex;

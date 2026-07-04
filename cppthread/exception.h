@@ -42,14 +42,14 @@ DECLARE_OUT_OF_RANGE(out_of_range);
 DECLARE_MAIN_EXCEPTION(cppthread_exception);
 
 DECLARE_EXCEPTION(cppthread_exception, already_exists);
-DECLARE_EXCEPTION(cppthread_exception, in_use_error);
+DECLARE_EXCEPTION(cppthread_exception, in_use);
 DECLARE_EXCEPTION(cppthread_exception, invalid_error);
 DECLARE_EXCEPTION(cppthread_exception, invalid_log_level);
-DECLARE_EXCEPTION(cppthread_exception, mutex_failed_error);
+DECLARE_EXCEPTION(cppthread_exception, mutex_failed);
 DECLARE_EXCEPTION(cppthread_exception, name_mismatch);
 DECLARE_EXCEPTION(cppthread_exception, not_found);
-DECLARE_EXCEPTION(cppthread_exception, not_locked_error);
-DECLARE_EXCEPTION(cppthread_exception, not_locked_once_error);
+DECLARE_EXCEPTION(cppthread_exception, not_locked);
+DECLARE_EXCEPTION(cppthread_exception, not_locked_once);
 DECLARE_EXCEPTION(cppthread_exception, not_started);
 DECLARE_EXCEPTION(cppthread_exception, system_error);
 
