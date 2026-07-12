@@ -64,7 +64,7 @@ if(SnapCatch2_FOUND)
 endif(SnapCatch2_FOUND)
 
 ##
-## build the low level thread test (proper lock/unlock)
+## build the low level thread test (proper lock/unlock; it works)
 ##
 project(recursive-mutex-test)
 
@@ -74,7 +74,7 @@ add_executable(${PROJECT_NAME}
 
 
 ##
-## build the low level thread test (extra lock/unlock in thread one)
+## build the low level thread test (extra lock/unlock in thread one; deadlocks)
 ##
 project(recursive-mutex-test-with-double-lock)
 
