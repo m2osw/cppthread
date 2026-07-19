@@ -77,7 +77,8 @@ runner::runner(std::string const & name)
 runner::~runner()
 {
     // the thread should never be set when the runner gets deleted
-    if(f_thread)
+    //
+    if(f_thread != nullptr)
     {
         // this is a bug; it could be that the object that derived from
         // the snap_runner calls gets destroyed under the thread controller's
@@ -174,7 +175,7 @@ bool runner::continue_running() const
  *
  * \attention
  * The enter() will always be called, but the run() and leave() functions
- * do not get called if a preceeding call ends in an abnormal manner (i.e.
+ * do not get called if a preceding call ends in an abnormal manner (i.e.
  * such as emitting an abort() call, a SEGV, etc.) Exceptions are properly
  * handled, however, if the enter() function exits with an exception, then
  * the run() function doesn't get called.

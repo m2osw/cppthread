@@ -47,6 +47,7 @@
 
 // C++
 //
+#include    <atomic>
 #include    <cstring>
 #include    <iostream>
 
@@ -120,7 +121,7 @@ pthread_mutex_t     g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
  * the lock so we are the only one logging data. Once true, we are the
  * one holding the lock if we pass through.
  */
-bool                g_log_locked = false;
+std::atomic<bool>   g_log_locked = false;
 
 
 /** \brief Whether the g_log_recursive_mutex was initialized.
@@ -242,7 +243,6 @@ void logger::lock()
         std::cerr << "fatal: the mutex lock in cppthread::logger::lock() generated error #"
                   << err
                   << std::endl;
-        pthread_mutex_unlock(&g_log_mutex);
         std::terminate();
     }
 
@@ -353,7 +353,7 @@ void logger::unlock()
 
     g_log_locked = false;
 
-    int err(pthread_mutex_unlock(&g_log_recursive_mutex));
+    int const err(pthread_mutex_unlock(&g_log_recursive_mutex));
     if(err != 0)
     {
         std::cerr << "fatal: a mutex unlock generated error #"

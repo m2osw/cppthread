@@ -348,6 +348,7 @@ mutex::~mutex()
     if(f_reference_count != 0UL)
     {
         // we cannot legally throw in a destructor so we instead generate a fatal error
+        // WARNING: the log << ... may generate a deadlock
         //
         log << log_level_t::fatal
             << "a mutex is being destroyed when its reference count is "
@@ -531,11 +532,17 @@ void mutex::is_locked_once()
 
     if(f_reference_count != 2UL)
     {
-        log << log_level_t::fatal
-            << "attempt to wait on a mutex when it is not locked exactly once; current count is "
-            << f_reference_count - 1UL
-            << '.'
-            << end;
+        std::uint32_t const reference_count(f_reference_count - 1UL);
+        lock.unlock();
+
+        // if reference_count != 0 then the log << ... may generate a
+        // deadlock; I'm not too sure how to avoid that one at the moment
+        //
+        //log << log_level_t::fatal
+        //    << "attempt to wait on a mutex when it is not locked exactly once; current count is "
+        //    << reference_count
+        //    << '.'
+        //    << end;
         throw not_locked_once("a wait function requires the mutex to be locked exactly once.");
     }
 }
@@ -559,16 +566,22 @@ void mutex::wait()
 {
     is_locked_once();
 
+    --f_reference_count;
     int const err(pthread_cond_wait(&f_impl->f_condition, &f_impl->f_mutex));
+    ++f_reference_count;
     if(err != 0)
     {
         // an error occurred!
-        log << log_level_t::fatal
-            << "a mutex conditional wait generated error #"
-            << err
-            << " -- "
-            << strerror(err)
-            << end;
+        //
+        // Here the mutex should be locked so a log << ... could deadlock
+        // since this very mutex is expected to be locked at this point
+        //
+        //log << log_level_t::fatal
+        //    << "a mutex conditional wait generated error #"
+        //    << err
+        //    << " -- "
+        //    << strerror(err)
+        //    << end;
         throw mutex_failed("pthread_cond_wait() failed");
     }
 }
@@ -635,10 +648,12 @@ bool mutex::timed_wait(timespec const & nsecs)
     //
     abstime += nsecs;
 
+    --f_reference_count;
     int const err(pthread_cond_timedwait(
               &f_impl->f_condition
             , &f_impl->f_mutex
             , &abstime));
+    ++f_reference_count;
     if(err != 0)
     {
         if(err == ETIMEDOUT)
@@ -647,17 +662,21 @@ bool mutex::timed_wait(timespec const & nsecs)
         }
 
         // an error occurred!
-        log << log_level_t::fatal
-            << "a mutex conditional timed wait generated error #"
-            << err
-            << " -- "
-            << strerror(err)
-            << " (time out sec = "
-            << abstime.tv_sec
-            << ", nsec = "
-            << abstime.tv_nsec
-            << ")"
-            << end;
+        //
+        // Here the mutex should be locked so a log << ... could deadlock
+        // since this very mutex is expected to be locked at this point
+        //
+        //log << log_level_t::fatal
+        //    << "a mutex conditional timed wait generated error #"
+        //    << err
+        //    << " -- "
+        //    << strerror(err)
+        //    << " (time out sec = "
+        //    << abstime.tv_sec
+        //    << ", nsec = "
+        //    << abstime.tv_nsec
+        //    << ")"
+        //    << end;
         throw mutex_failed("pthread_cond_timedwait() failed");
     }
 
@@ -710,10 +729,12 @@ bool mutex::dated_wait(timespec const & date)
 {
     is_locked_once();
 
+    --f_reference_count;
     int const err(pthread_cond_timedwait(
               &f_impl->f_condition
             , &f_impl->f_mutex
             , &date));
+    ++f_reference_count;
     if(err != 0)
     {
         if(err == ETIMEDOUT)
@@ -723,17 +744,20 @@ bool mutex::dated_wait(timespec const & date)
 
         // an error occurred!
         //
-        log << log_level_t::error
-            << "a mutex conditional wait generated error #"
-            << err
-            << " -- "
-            << strerror(err)
-            << " (time out sec = "
-            << date.tv_sec
-            << ", nsec = "
-            << date.tv_nsec
-            << ")"
-            << end;
+        // Here the mutex should be locked so a log << ... could deadlock
+        // since this very mutex is expected to be locked at this point
+        //
+        //log << log_level_t::error
+        //    << "a mutex conditional wait generated error #"
+        //    << err
+        //    << " -- "
+        //    << strerror(err)
+        //    << " (time out sec = "
+        //    << date.tv_sec
+        //    << ", nsec = "
+        //    << date.tv_nsec
+        //    << ")"
+        //    << end;
         throw mutex_failed("pthread_cond_timedwait() failed");
     }
 
@@ -795,6 +819,7 @@ void mutex::safe_signal()
     guard lock(*this);
 
     int const err(pthread_cond_signal(&f_impl->f_condition));
+    lock.unlock();
     if(err != 0)
     {
         log << log_level_t::fatal
@@ -870,6 +895,7 @@ void mutex::safe_broadcast()
     guard lock(*this);
 
     int const err(pthread_cond_broadcast(&f_impl->f_condition));
+    lock.unlock();
     if(err != 0)
     {
         log << log_level_t::fatal

@@ -35,6 +35,7 @@ namespace cppthread
 {
 
 
+
 enum class log_level_t
 {
     debug,
@@ -90,6 +91,7 @@ inline logger & end(logger & l) { return l.end(); }
 
 
 extern logger   log;
+
 
 
 } // namespace cppthread

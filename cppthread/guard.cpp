@@ -113,6 +113,7 @@ guard::~guard()
     catch(std::exception const & e)
     {
         // a log was already printed, we do not absolutely need another one
+        //
         log << log_level_t::fatal
             << "mutex::unlock() threw an exception while in the ~guard() function."
             << end;

@@ -587,6 +587,8 @@ bool thread::start()
 
     if(f_running || f_started)
     {
+        lock.unlock();
+
         log << log_level_t::warning
             << "the thread is already running."
             << end;
@@ -595,6 +597,8 @@ bool thread::start()
 
     if(!f_runner->is_ready())
     {
+        lock.unlock();
+
         log << log_level_t::warning
             << "the thread runner is not ready."
             << end;
@@ -623,6 +627,7 @@ bool thread::start()
     {
         // LCOV_EXCL_START
         f_running = false;
+        lock.unlock();
 
         log << log_level_t::error
             << "the thread could not be created, error #"
@@ -878,7 +883,7 @@ std::exception_ptr thread::get_exception() const
  * \param[in] sig  The signal to send to this thread.
  *
  * \return true if the signal was sent, false if the signal could not
- *         be sent (i.e. the thread was already terminated...)
+ *         be sent because the thread is not running.
  */
 bool thread::kill(int sig)
 {
@@ -1073,25 +1078,24 @@ pid_t gettid()
 
 /** \brief Get the maximum process identifier.
  *
- * This function retrieves the maximum that getpid() may return.
+ * This function retrieves the maximum number returned by getpid().
  *
- * The value is cached by the function (in a static variable.) Note that
- * is somewhat wrong since that number can be changed dynamically,
- * although I've seen too many people ever doing so. If your process
- * depends on it, then stop your process, make the change, and
- * restart your process.
+ * The value is cached by the function (in a static variable). Note that
+ * is somewhat wrong since that number can be changed dynamically.
+ * If a process depends on it, then stop it, make the change, and
+ * restart it.
  *
  * Note that this function returns the maximum that getpid() can return
  * and not the maximum + 1. In other words, the value returned by this
- * function is inclusive (i.e. in most cases you will get 32767 which a
- * process can have as its PID.)
+ * function is inclusive. On machines running an older kernel, it returns
+ * 32767. Newer kernels make use of a much larger limit: 4194303.
  *
  * So far, the documentation I've found about the value in the kernel
  * file is not clear about whether that value is inclusive or the
  * last possible PID + 1. I wrote a small test to get the answer and
  * each time the maximum PID I could get was 32767 when the content of
  * "/proc/sys/kernel/pid_max" returns 32768. This is how most C software
- * functions so I am pretty sure our function here is correct.
+ * function, so I am pretty sure our function here is correct.
  *
  * \note
  * The following code often breaks with a fork() failed error. Once
@@ -1140,12 +1144,13 @@ pid_t gettid()
  * }
  * \endcode
  *
- * \note
- * We use this function in snaplock which is affected in case the
- * parameter get dynamically changed by writing to
+ * \bug
+ * This function is used by cluck which is badly affected in case the
+ * parameter is changed dynamically by writing to
  * "/proc/sys/kernel/pid_max".
  *
- * \return The maximum getpid() can return or -1 if it can't be determined.
+ * \return The maximum getpid() can return (inclusive) or -1 if it
+ *         cannot be determined.
  */
 pid_t get_pid_max()
 {

@@ -180,7 +180,7 @@ public:
         return true;
     }
 
-    bool pop_front(T & v, int64_t const usecs)
+    bool pop_front(T & v, std::int64_t const usecs)
     {
         guard lock(*this);
 
@@ -196,49 +196,57 @@ public:
                 }
             };
 
-        for(;;)
+        try
         {
-            // search for an item we can pop now
-            //
-            for(auto it(f_queue.begin()); it != f_queue.end(); ++it)
+            for(;;)
             {
-                bool const result(validate_item<T>(*it));
-                if(result)
-                {
-                    v = *it;
-                    f_queue.erase(it);
-                    cleanup();
-                    return true;
-                }
-            }
-
-            if(f_done)
-            {
-                break;
-            }
-
-            // when no items can be returned, wait a bit if possible
-            // and try again
-            //
-            if(usecs == -1)
-            {
-                // wait until signal() wakes us up
+                // search for an item we can pop now
                 //
-                wait();
-            }
-            else if(usecs > 0)
-            {
-                if(!timed_wait(usecs))
+                for(auto it(f_queue.begin()); it != f_queue.end(); ++it)
+                {
+                    bool const result(validate_item<T>(*it));
+                    if(result)
+                    {
+                        v = *it;
+                        f_queue.erase(it);
+                        cleanup();
+                        return true;
+                    }
+                }
+
+                if(f_done)
                 {
                     break;
                 }
-            }
-            else // if(usecs == 0)
-            {
-                // do not wait
+
+                // when no items can be returned, wait a bit if possible
+                // and try again
                 //
-                break;
+                if(usecs == -1)
+                {
+                    // wait until signal() wakes us up
+                    //
+                    wait();
+                }
+                else if(usecs > 0)
+                {
+                    if(!timed_wait(usecs))
+                    {
+                        break;
+                    }
+                }
+                else // if(usecs == 0)
+                {
+                    // do not wait
+                    //
+                    break;
+                }
             }
+        }
+        catch(...)
+        {
+            cleanup();
+            throw;
         }
         cleanup();
         return false;
@@ -257,20 +265,20 @@ public:
         return f_queue.empty();
     }
 
-    size_t size() const
+    std::size_t size() const
     {
         guard lock(const_cast<fifo &>(*this));
         return f_queue.size();
     }
 
-    size_t byte_size() const
+    std::size_t byte_size() const
     {
         guard lock(const_cast<fifo &>(*this));
         return std::accumulate(
                     f_queue.begin(),
                     f_queue.end(),
                     0,
-                    [](size_t accum, T const & obj)
+                    [](std::size_t accum, T const & obj)
                     {
                         return accum + obj.size();
                     });
