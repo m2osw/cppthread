@@ -532,7 +532,7 @@ void mutex::is_locked_once()
 
     if(f_reference_count != 2UL)
     {
-        std::uint32_t const reference_count(f_reference_count - 1UL);
+        //std::uint32_t const reference_count(f_reference_count - 1UL);
         lock.unlock();
 
         // if reference_count != 0 then the log << ... may generate a
