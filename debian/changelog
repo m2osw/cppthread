@@ -1,3 +1,21 @@
+cppthread (1.1.17.0~noble) noble; urgency=high
+
+  * Manually unlock some guards early in start/stop functions to make sure we
+    avoid potential deadlocks.
+  * Fixed the fifo pop_front() to make sure braodcast() gets called if needed.
+  * Fixed the wait() functions reference count so the reference == 1 test works.
+    - wrote test to show the pthread_cond_wait() deadlocks if the reference
+      count of a recursive lock is not exactly 1 at the time we try to wait.
+  * Switch license to GPL3 and bumped copyright notice to 2026.
+  * dded deswappify tool to re-arrange memory/swap on the fly.
+  * Fixed some exception messages (namespaces were wrong in many places).
+  * Fixed the logger; i.e. make sure the lock is not in place when sending the
+    final output.
+  * Renamed "workload" as "payload" (terminology bug).
+  * Various cleans / enhancements (code & documentation).
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 09 Aug 2026 13:05:32 -0700
+
 cppthread (1.1.16.0~noble) noble; urgency=high
 
   * Adding actual tests of the cppthread and runner.
