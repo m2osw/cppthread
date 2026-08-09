@@ -16,6 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// since Ubuntu 26.04, we need to ignore the pointer strict overflow
+// I think we could also change the tests to avoid having to do this here
+//
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
+
 // cppthread
 //
 #include    <cppthread/fifo.h>

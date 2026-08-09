@@ -1,3 +1,9 @@
+cppthread (1.1.17.1~noble) noble; urgency=high
+
+  * Avoid fifo test warning on pointer overflow.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 09 Aug 2026 16:46:04 -0700
+
 cppthread (1.1.17.0~noble) noble; urgency=high
 
   * Manually unlock some guards early in start/stop functions to make sure we
