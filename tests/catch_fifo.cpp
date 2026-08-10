@@ -16,11 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// since Ubuntu 26.04, we need to ignore the pointer strict overflow
-// I think we could also change the tests to avoid having to do this here
-//
-#pragma GCC diagnostic ignored "-Wstrict-overflow"
-
 // cppthread
 //
 #include    <cppthread/fifo.h>
@@ -143,12 +138,15 @@ CATCH_TEST_CASE("fifo", "[fifo]")
             items[1]->add_dependency(items[0]);
             items[2]->add_dependency(items[1]);
             items[3]->add_dependency(items[0]);
-            items[4]->add_dependencies({items[0], items[1], items[2], items[3]});
-            items[5]->add_dependencies({items[3], items[4]});
+            cppthread::item_with_predicate::dependencies_t deps1 = {items[0], items[1], items[2], items[3]};
+            items[4]->add_dependencies(deps1);
+            cppthread::item_with_predicate::dependencies_t deps2 = {items[3], items[4]};
+            items[5]->add_dependencies(deps2);
             items[6]->add_dependency(items[2]);
             items[7]->add_dependency(items[6]);
             items[8]->add_dependency(items[6]);
-            items[9]->add_dependencies({items[7], items[6]});
+            cppthread::item_with_predicate::dependencies_t deps3 = {items[7], items[6]};
+            items[9]->add_dependencies(deps3);
 
             for(std::size_t i(0); i < sizeof(items) / sizeof(items[0]); ++i)
             {
@@ -216,15 +214,19 @@ CATCH_TEST_CASE("fifo", "[fifo]")
             //             +----+
             //
             items[0]->add_dependency(items[5]);
-            items[1]->add_dependencies({items[0], items[3]});
+            cppthread::item_with_predicate::dependencies_t deps1 = {items[0], items[3]};
+            items[1]->add_dependencies(deps1);
             items[2]->add_dependency(items[7]);
-            items[3]->add_dependencies({items[8], items[9]});
-            items[4]->add_dependencies({items[6], items[0]});
+            cppthread::item_with_predicate::dependencies_t deps2 = {items[8], items[9]};
+            items[3]->add_dependencies(deps2);
+            cppthread::item_with_predicate::dependencies_t deps3 = {items[6], items[0]};
+            items[4]->add_dependencies(deps3);
             //items[5]->add_dependencies(...);
             items[6]->add_dependency(items[2]);
             items[7]->add_dependency(items[5]);
             items[8]->add_dependency(items[5]);
-            items[9]->add_dependencies({items[8], items[4]});
+            cppthread::item_with_predicate::dependencies_t deps4 = {items[8], items[4]};
+            items[9]->add_dependencies(deps4);
 
             for(std::size_t i(0); i < sizeof(items) / sizeof(items[0]); ++i)
             {
