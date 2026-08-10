@@ -1,6 +1,14 @@
+cppthread (1.1.17.2~noble) noble; urgency=high
+
+  * Avoid fifo test warning on pointer overflow take 2.
+    - This time try with explicit lists.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 09 Aug 2026 16:46:04 -0700
+
 cppthread (1.1.17.1~noble) noble; urgency=high
 
   * Avoid fifo test warning on pointer overflow.
+    - Try to ignore the overflow with a #pragma.
 
  -- Alexis Wilke <alexis@m2osw.com>  Sun, 09 Aug 2026 16:46:04 -0700
 
