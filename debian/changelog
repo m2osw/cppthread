@@ -1,3 +1,10 @@
+cppthread (1.1.17.3~noble) noble; urgency=high
+
+  * Avoid fifo test warning on pointer overflow take 3.
+    - This time try with one push_back() at a time.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sun, 09 Aug 2026 20:44:12 -0700
+
 cppthread (1.1.17.2~noble) noble; urgency=high
 
   * Avoid fifo test warning on pointer overflow take 2.

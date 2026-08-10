@@ -138,14 +138,22 @@ CATCH_TEST_CASE("fifo", "[fifo]")
             items[1]->add_dependency(items[0]);
             items[2]->add_dependency(items[1]);
             items[3]->add_dependency(items[0]);
-            cppthread::item_with_predicate::dependencies_t deps1 = {items[0], items[1], items[2], items[3]};
+            cppthread::item_with_predicate::dependencies_t deps1;
+            deps1.push_back(items[0]);
+            deps1.push_back(items[1]);
+            deps1.push_back(items[2]);
+            deps1.push_back(items[3]);
             items[4]->add_dependencies(deps1);
-            cppthread::item_with_predicate::dependencies_t deps2 = {items[3], items[4]};
+            cppthread::item_with_predicate::dependencies_t deps2;
+            deps2.push_back(items[3]);
+            deps2.push_back(items[4]);
             items[5]->add_dependencies(deps2);
             items[6]->add_dependency(items[2]);
             items[7]->add_dependency(items[6]);
             items[8]->add_dependency(items[6]);
-            cppthread::item_with_predicate::dependencies_t deps3 = {items[7], items[6]};
+            cppthread::item_with_predicate::dependencies_t deps3;
+            deps3.push_back(items[7]);
+            deps3.push_back(items[6]);
             items[9]->add_dependencies(deps3);
 
             for(std::size_t i(0); i < sizeof(items) / sizeof(items[0]); ++i)
@@ -214,18 +222,26 @@ CATCH_TEST_CASE("fifo", "[fifo]")
             //             +----+
             //
             items[0]->add_dependency(items[5]);
-            cppthread::item_with_predicate::dependencies_t deps1 = {items[0], items[3]};
+            cppthread::item_with_predicate::dependencies_t deps1;
+            deps1.push_back(items[0]);
+            deps1.push_back(items[3]);
             items[1]->add_dependencies(deps1);
             items[2]->add_dependency(items[7]);
-            cppthread::item_with_predicate::dependencies_t deps2 = {items[8], items[9]};
+            cppthread::item_with_predicate::dependencies_t deps2;
+            deps2.push_back(items[8]);
+            deps2.push_back(items[9]);
             items[3]->add_dependencies(deps2);
-            cppthread::item_with_predicate::dependencies_t deps3 = {items[6], items[0]};
+            cppthread::item_with_predicate::dependencies_t deps3;
+            deps2.push_back(items[6]);
+            deps2.push_back(items[0]);
             items[4]->add_dependencies(deps3);
             //items[5]->add_dependencies(...);
             items[6]->add_dependency(items[2]);
             items[7]->add_dependency(items[5]);
             items[8]->add_dependency(items[5]);
-            cppthread::item_with_predicate::dependencies_t deps4 = {items[8], items[4]};
+            cppthread::item_with_predicate::dependencies_t deps4;
+            deps2.push_back(items[8]);
+            deps2.push_back(items[4]);
             items[9]->add_dependencies(deps4);
 
             for(std::size_t i(0); i < sizeof(items) / sizeof(items[0]); ++i)
