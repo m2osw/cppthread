@@ -232,16 +232,16 @@ CATCH_TEST_CASE("fifo", "[fifo]")
             deps2.push_back(items[9]);
             items[3]->add_dependencies(deps2);
             cppthread::item_with_predicate::dependencies_t deps3;
-            deps2.push_back(items[6]);
-            deps2.push_back(items[0]);
+            deps3.push_back(items[6]);
+            deps3.push_back(items[0]);
             items[4]->add_dependencies(deps3);
             //items[5]->add_dependencies(...);
             items[6]->add_dependency(items[2]);
             items[7]->add_dependency(items[5]);
             items[8]->add_dependency(items[5]);
             cppthread::item_with_predicate::dependencies_t deps4;
-            deps2.push_back(items[8]);
-            deps2.push_back(items[4]);
+            deps4.push_back(items[8]);
+            deps4.push_back(items[4]);
             items[9]->add_dependencies(deps4);
 
             for(std::size_t i(0); i < sizeof(items) / sizeof(items[0]); ++i)

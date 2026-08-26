@@ -1060,22 +1060,6 @@ int get_number_of_available_processors()
 }
 
 
-/** \brief Get the thread identifier of the current thread.
- *
- * This function retrieves the thread identifier of the current thread.
- * In most cases, this is only useful to print out messages to a log
- * including the thread identifier. This identifier is equivalent
- * to the `pid_t` returned by `getpid()` but specific to the running
- * thread.
- *
- * \return The thread identifier.
- */
-pid_t gettid()
-{
-    return static_cast<pid_t>(syscall(SYS_gettid));
-}
-
-
 /** \brief Get the maximum process identifier.
  *
  * This function retrieves the maximum number returned by getpid().
