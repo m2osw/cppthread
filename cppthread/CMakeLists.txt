@@ -34,7 +34,9 @@ add_library(${PROJECT_NAME} SHARED
     life.cpp
     log.cpp
     mutex.cpp
+    recursive_rwlock.cpp
     runner.cpp
+    rwlock.cpp
     thread.cpp
     version.cpp
 )
@@ -83,7 +85,9 @@ install(
         log.h
         mutex.h
         pool.h
+        recursive_rwlock.h
         runner.h
+        rwlock.h
         thread.h
         worker.h
         ${CMAKE_CURRENT_BINARY_DIR}/version.h

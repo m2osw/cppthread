@@ -9,4 +9,7 @@
   wait() we use a timed_wait() which allows us to wake up and take care of
   a lingering packet).
 
+* Look at implementing the pshare feature so a fork() does not kill a mutex
+  between the parent and child (although if the other threads still die, it
+  may still not be that useful since we'd still try the join()...)
 

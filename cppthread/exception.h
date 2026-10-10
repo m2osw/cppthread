@@ -41,6 +41,7 @@ DECLARE_OUT_OF_RANGE(out_of_range);
 DECLARE_MAIN_EXCEPTION(cppthread_exception);
 
 DECLARE_EXCEPTION(cppthread_exception, already_exists);
+DECLARE_EXCEPTION(cppthread_exception, already_locked_for_reading);
 DECLARE_EXCEPTION(cppthread_exception, in_use);
 DECLARE_EXCEPTION(cppthread_exception, invalid_error);
 DECLARE_EXCEPTION(cppthread_exception, invalid_log_level);

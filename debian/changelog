@@ -1,3 +1,10 @@
+cppthread (1.1.18.0~noble) noble; urgency=high
+
+  * Added the rwlock and recursive_rwlock classes.
+  * Various documentation clean ups/enhancements.
+
+ -- Alexis Wilke <alexis@m2osw.com>  Sat, 10 Oct 2026 13:27:25 -0700
+
 cppthread (1.1.17.3~noble) noble; urgency=high
 
   * Avoid fifo test warning on pointer overflow take 3.

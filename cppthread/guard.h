@@ -18,14 +18,13 @@
 #pragma once
 
 /** \file
- * \brief Thread Runner and Managers.
+ * \brief A guard to lock a region of code.
  *
- * This file includes the declaration and implementation (For templates)
- * of classes used to manage threads the easy way. Especially, our
- * implementation is aware of object destructors so a thread manager
- * (snap_thread) can be destroyed. It will automatically and properly
- * wait for its runner (the actual system pthread) to exit before
- * finishing up its and its runner clean up.
+ * This file includes the declaration if the guard object used to
+ * safely lock a mutex or a rwlock.
+ *
+ * It is safe because it allows your code to raise exceptions and
+ * still get the expected unlock called.
  */
 
 
@@ -35,12 +34,16 @@ namespace cppthread
 
 
 class mutex;
+class recursive_rwlock;
+class rwlock;
 
 
 class guard
 {
 public:
                         guard(mutex & m);
+                        guard(recursive_rwlock & r, bool exclusive = true);
+                        guard(rwlock & l, bool exclusive = true);
                         guard(guard const & rhs) = delete;
                         ~guard();
 
@@ -52,7 +55,10 @@ public:
 
 private:
     bool                f_locked = false;
+    bool                f_exclusive = false;
     mutex *             f_mutex = nullptr;
+    recursive_rwlock *  f_recursive_rwlock = nullptr;
+    rwlock *            f_rwlock = nullptr;
 };
 
 

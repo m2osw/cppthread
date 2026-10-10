@@ -121,7 +121,7 @@ public:
 /** \class mutex
  * \brief A mutex object to ensures atomicity.
  *
- * This class is used by threads when some data accessed by more than
+ * This class is used by threads when some data shared by more than
  * one thread is about to be accessed. In most cases it is used with the
  * guard class so it is safe even in the event an exception is raised.
  *
@@ -134,8 +134,15 @@ public:
  * \endcode
  *
  * The mutex also includes a condition variable which can be signaled
- * using the signal() function. This wakes threads that are currently
- * waiting on the condition with one of the wait() functions.
+ * using the signal() or broadcast() functions. This wakes threads
+ * that are currently waiting on the condition with one of the wait()
+ * functions.
+ *
+ * \note
+ * There are safe versions of both (safe_signal() and safe_broadcast())
+ * if you want to make sure that the signal safely sent to a single
+ * or all threads. Without the safe version, the functions are faster
+ * but they may wake up threads that are not expected to be waken up.
  *
  * \code
  *     {
@@ -165,7 +172,7 @@ public:
  * The mutex copy and assignment operators are deleted. We do not allow you
  * to copy a mutex because that is not a good idea. You probably have an
  * issue in your code if you think you need to make a copy of a mutex.
- * (although that our implementation, because of the `f_impl`, would allow for
+ * (Although that our implementation, because of the `f_impl`, would allow for
  * copies, it's still not a good idea.)
  */
 
@@ -179,7 +186,7 @@ public:
  * and a memory barrier.
  *
  * In most cases one uses the guard object to temporarily lock
- * the mutex using the FIFO to help ensure the mutex gets unlocked as
+ * the mutex using the stack to help ensure the mutex gets unlocked as
  * required in the event an exception occurs.
  *
  * \code
@@ -226,10 +233,10 @@ public:
  * \endcode
  *
  * If you need a FIFO of messages between your threads, look at the
- * snap_fifo template.
+ * fifo template.
  *
  * \note
- * Care must be used to always initialized a mutex before it
+ * Care must be used to always initialize a mutex before it
  * is possibly accessed by more than one thread. This is usually
  * the case in the constructor of your objects.
  *
@@ -340,8 +347,8 @@ mutex::mutex()
  * the mutex and conditions get destroyed.
  *
  * This destructor verifies that the mutex is not currently locked. A
- * locked mutex cannot be destroyed. If still locked, then an error is
- * sent to the logger and the function calls std::terminate().
+ * locked mutex cannot be safely destroyed. If still locked, then an error
+ * is sent to the logger and the function calls std::terminate().
  */
 mutex::~mutex()
 {
@@ -409,7 +416,7 @@ void mutex::lock()
 /** \brief Try locking the mutex.
  *
  * This function tries locking the mutex. If the mutex cannot be locked
- * because another process already locked it, then the function returns
+ * because another thread already locked it, then the function returns
  * immediately with false.
  *
  * \exception invalid_error
@@ -447,7 +454,7 @@ bool mutex::try_lock()
 
 /** \brief Unlock a mutex.
  *
- * This function unlock the specified mutex. The function must be called
+ * This function unlocks the specified mutex. The function must be called
  * exactly once per call to the lock() function, or successful call to
  * the try_lock() function.
  *
@@ -465,7 +472,7 @@ bool mutex::try_lock()
  */
 void mutex::unlock()
 {
-    // we can't unlock if it wasn't locked before!
+    // we cannot unlock if it was not locked before!
     //
     if(f_reference_count == 0UL)
     {
@@ -1001,7 +1008,7 @@ void create_system_mutex()
  * \brief Shared pointer to a mutex.
  *
  * You can allocate mutexes as global variables, local variables, variable
- * members and once in a while you  may want to allocate them. In that
+ * members and once in a while you may want to allocate them. In that
  * case, we suggest that you use a shared pointer.
  */
 
