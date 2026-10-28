@@ -70,6 +70,16 @@ namespace cppthread
 
 
 
+namespace
+{
+
+
+
+std::atomic<std::size_t>        g_running_threads = 0;
+
+
+
+} // no name namespace
 
 
 /** \brief Initialize the thread object.
@@ -422,6 +432,7 @@ void thread::internal_thread()
         f_running = false;
         f_tid = PID_UNDEFINED;
         f_mutex.signal();
+        --g_running_threads;
     }
 }
 
@@ -637,6 +648,7 @@ bool thread::start()
         return false;
         // LCOV_EXCL_STOP
     }
+    ++g_running_threads;
 
     while(!f_started)
     {
@@ -732,6 +744,27 @@ void thread::stop(std::function<void(thread *)> callback)
         e.swap(f_exception);
         std::rethrow_exception(e);
     }
+}
+
+
+/** \brief Retrieve the number of running threads.
+ *
+ * This function returns the number of threads that this interface
+ * started and are currently considered running.
+ *
+ * Note that a thread that returned from its run() function is going
+ * to end and reduce the counter, but it may not yet be joined.
+ *
+ * \note
+ * This is a live number. It will be correct only at the instant the
+ * function is called. Once the function returned, it may not be correct
+ * anymore.
+ *
+ * \return The number of threads currently running.
+ */
+std::size_t thread::get_running_threads()
+{
+    return g_running_threads;
 }
 
 
@@ -1402,7 +1435,7 @@ std::string get_boot_id()
  *
  * \note
  * If the /proc file system is somehow not accessible, then the function
- * may return -1.
+ * returns -1.
  *
  * \return The number of threads or -1 on an error.
  */

@@ -82,6 +82,7 @@ public:
     void                        mask_signals(libexcept::sig_list_t list);
     void                        mask_all_signals();
     void                        unmask_signals(libexcept::sig_list_t list);
+    static std::size_t          get_running_threads();
     pid_t                       get_thread_tid() const;
     mutex &                     get_thread_mutex() const;
     void                        set_log_all_exceptions(bool log_all_exceptions);

@@ -34,7 +34,7 @@
  * * rlock() -- wait until it can lock concurrently (read-only mode)
  * * try_lock() -- try a lock, if it fails return immediately
  * * timed_wait() -- try to lock for the specified amount of time
- * * dated_wait() -- try to lock by the specified date
+ * * dated_wait() -- try to lock until the specified date
  * * wait() -- wait until a signal is received
  */
 
@@ -638,7 +638,7 @@ bool rwlock::dated_rlock(timespec const & date)
  * \warning
  * Keep in mind that these locks are not exactly recursive. If you keep
  * the default mode, i.e. read has priority over write, then the shared
- * locks are recursive, but but the writes never are.
+ * locks are recursive, but the writes never are.
  *
  * \exception invalid_error
  * If the unlock fails, this exception is raised.
